@@ -29,16 +29,22 @@ export default async function handler(req, res) {
         const link = block.match(/<link>(.*?)<\/link>/)?.[1] || "";
         const pubDate = block.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || "";
 
-        await supabase.from("daily_results").insert({
-          project_id: k.project_id,
-          keyword: k.keyword,
-          title,
-          url: link,
-          source: "google_news",
-          published_at: pubDate ? new Date(pubDate) : null
-        });
-      }
+await supabase
+  .from("daily_results")
+  .upsert(
+    {
+      project_id: k.project_id,
+      keyword: k.keyword,
+      title,
+      url: link,
+      source: "google_news",
+      published_at: pubDate ? new Date(pubDate) : null
+    },
+    {
+      onConflict: "project_id,keyword,url",
+      ignoreDuplicates: true
     }
+  );
 
     res.status(200).json({ ok: true });
   } catch (e) {
