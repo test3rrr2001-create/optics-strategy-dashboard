@@ -7,19 +7,22 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    const { data: keywords } = await supabase
+    const { data: keywords, error: keywordsError } = await supabase
       .from("keywords")
       .select("id, keyword, project_id")
       .eq("active", true);
 
-    for (const k of keywords) {
+    if (keywordsError) {
+      throw new Error(`keywords fetch error: ${keywordsError.message}`);
+    }
+
+    for (const k of keywords || []) {
       const searchUrl =
         "https://news.google.com/rss/search?q=" +
         encodeURIComponent(k.keyword) +
         "&hl=ja&gl=JP&ceid=JP:ja";
 
-      const rss = await fetch(searchUrl).then(r => r.text());
-
+      const rss = await fetch(searchUrl).then((r) => r.text());
       const items = [...rss.matchAll(/<item>([\s\S]*?)<\/item>/g)];
 
       for (const item of items.slice(0, 3)) {
@@ -29,22 +32,28 @@ export default async function handler(req, res) {
         const link = block.match(/<link>(.*?)<\/link>/)?.[1] || "";
         const pubDate = block.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || "";
 
-await supabase
-  .from("daily_results")
-  .upsert(
-    {
-      project_id: k.project_id,
-      keyword: k.keyword,
-      title,
-      url: link,
-      source: "google_news",
-      published_at: pubDate ? new Date(pubDate) : null
-    },
-    {
-      onConflict: "project_id,keyword,url",
-      ignoreDuplicates: true
+        const { error: upsertError } = await supabase
+          .from("daily_results")
+          .upsert(
+            {
+              project_id: k.project_id,
+              keyword: k.keyword,
+              title,
+              url: link,
+              source: "google_news",
+              published_at: pubDate ? new Date(pubDate).toISOString() : null
+            },
+            {
+              onConflict: "project_id,keyword,url",
+              ignoreDuplicates: true
+            }
+          );
+
+        if (upsertError) {
+          throw new Error(`daily_results upsert error: ${upsertError.message}`);
+        }
+      }
     }
-  );
 
     res.status(200).json({ ok: true });
   } catch (e) {
