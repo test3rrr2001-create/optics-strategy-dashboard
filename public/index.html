@@ -1,12 +1,143 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Optics Strategy Dashboard</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background:#f7f8fa; color:#1f2937; }
+    .wrap { max-width:1200px; margin:24px auto; padding:0 16px; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:16px; }
+    .card,.panel { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; }
+    .label { font-size:12px; color:#6b7280; }
+    .value { font-size:24px; font-weight:700; }
+    .filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; align-items:end; }
+    label { font-size:12px; color:#6b7280; display:block; margin-bottom:4px; }
+    input,select,button { width:100%; box-sizing:border-box; border:1px solid #e5e7eb; border-radius:6px; padding:8px; }
+    button { background:#2563eb; color:#fff; font-weight:600; cursor:pointer; }
+    .split { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
+    .table-wrap { overflow:auto; max-height:65vh; border:1px solid #e5e7eb; border-radius:8px; background:#fff; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th,td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; vertical-align:top; }
+    th { font-size:12px; color:#6b7280; background:#fff; position:sticky; top:0; }
+    .status { font-size:13px; color:#6b7280; margin:8px 0; }
+    @media (max-width:800px){ .split{grid-template-columns:1fr;} }
+  </style>
 </head>
 <body>
-  <h1>Optics Strategy Dashboard</h1>
-  <p>デプロイ成功。次はSupabase接続とデータ表示に進みます。</p>
+  <div class="wrap">
+    <h1>Optics Strategy Dashboard</h1>
+
+    <section class="cards" id="cards"></section>
+
+    <section class="panel">
+      <div class="filters">
+        <div><label>project</label><select id="project"><option value="">すべて</option></select></div>
+        <div><label>開始日</label><input id="dateFrom" type="date" /></div>
+        <div><label>終了日</label><input id="dateTo" type="date" /></div>
+        <div><label>keyword</label><input id="keyword" type="text" placeholder="例: 顕微鏡" /></div>
+        <div><button id="apply">絞り込み</button></div>
+      </div>
+    </section>
+
+    <section class="split">
+      <div class="panel"><strong>project別件数</strong><div id="projectCounts"></div></div>
+      <div class="panel"><strong>source別件数</strong><div id="sourceCounts"></div></div>
+    </section>
+
+    <div class="status" id="status"></div>
+
+    <section class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>created_at</th><th>project</th><th>keyword</th><th>title</th><th>source</th><th>published_at</th><th>url</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    const ids = (id) => document.getElementById(id);
+    const cardsEl = ids("cards"), projectEl = ids("project"), dateFromEl = ids("dateFrom"), dateToEl = ids("dateTo"), keywordEl = ids("keyword");
+    const rowsEl = ids("rows"), statusEl = ids("status"), projectCountsEl = ids("projectCounts"), sourceCountsEl = ids("sourceCounts");
+
+    const labels = { total:"総件数", microscope:"顕微鏡", industrial_endoscope:"工業用内視鏡", pipe_camera:"管内カメラ", beauty:"美容用" };
+    const fmt = (v) => v ? new Date(v).toLocaleString("ja-JP") : "-";
+
+    function renderCards(counts) {
+      cardsEl.innerHTML = "";
+      Object.keys(labels).forEach((k) => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerHTML = `<div class="label">${labels[k]}</div><div class="value">${counts[k] || 0}</div>`;
+        cardsEl.appendChild(d);
+      });
+    }
+
+    function renderCountList(el, data) {
+      const entries = Object.entries(data || {});
+      el.innerHTML = entries.length
+        ? entries.sort((a,b) => b[1]-a[1]).map(([n,c]) => `<div>${n}: <strong>${c}</strong></div>`).join("")
+        : "データなし";
+    }
+
+    function renderRows(items) {
+      rowsEl.innerHTML = "";
+      (items || []).forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${fmt(item.created_at)}</td>
+          <td>${item.project_name || "-"}</td>
+          <td>${item.keyword || "-"}</td>
+          <td>${item.title || "-"}</td>
+          <td>${item.source || "-"}</td>
+          <td>${fmt(item.published_at)}</td>
+          <td>${item.url ? `<a href="${item.url}" target="_blank" rel="noopener">link</a>` : "-"}</td>`;
+        rowsEl.appendChild(tr);
+      });
+    }
+
+    function buildQuery() {
+      const qs = new URLSearchParams();
+      if (projectEl.value) qs.set("project", projectEl.value);
+      if (dateFromEl.value) qs.set("dateFrom", dateFromEl.value);
+      if (dateToEl.value) qs.set("dateTo", dateToEl.value);
+      if (keywordEl.value) qs.set("keyword", keywordEl.value.trim());
+      return qs.toString();
+    }
+
+    async function load() {
+      statusEl.textContent = "読み込み中...";
+      try {
+        const q = buildQuery();
+        const res = await fetch(`/api/dashboard/results${q ? `?${q}` : ""}`);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "読み込みエラー");
+
+        if (projectEl.options.length <= 1) {
+          (json.projects || []).forEach((p) => {
+            const op = document.createElement("option");
+            op.value = p.id;
+            op.textContent = p.name || p.id;
+            projectEl.appendChild(op);
+          });
+        }
+
+        renderCards(json.counts || {});
+        renderCountList(projectCountsEl, json.counts?.by_project);
+        renderCountList(sourceCountsEl, json.counts?.by_source);
+        renderRows(json.items || []);
+        statusEl.textContent = `${json.items?.length || 0}件を表示`;
+      } catch (e) {
+        statusEl.textContent = `エラー: ${e.message}`;
+      }
+    }
+
+    ids("apply").addEventListener("click", load);
+    load();
+  </script>
 </body>
 </html>
