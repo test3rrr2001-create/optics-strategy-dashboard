@@ -1,4 +1,4 @@
-﻿import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
 const PROJECT_LABELS = {
   microscope: "顕微鏡",
@@ -12,6 +12,13 @@ const PROJECT_ID_TO_KEY = {
   2: "industrial_endoscope",
   3: "pipe_camera",
   4: "beauty"
+};
+
+const PROJECT_ID_TO_LABEL = {
+  1: "顕微鏡",
+  2: "工業用内視鏡",
+  3: "管内カメラ",
+  4: "美容用"
 };
 
 function normalizeProjectKey(value) {
@@ -91,7 +98,7 @@ export default async function handler(req, res) {
     }
 
     const projectNameById = Object.fromEntries(
-      (projects || []).map((p) => [p.id, getProjectLabel(p)])
+      (projects || []).map((p) => [p.id, getProjectLabel(p) || PROJECT_ID_TO_LABEL[p.id]])
     );
 
     let query = supabase
@@ -154,7 +161,7 @@ export default async function handler(req, res) {
       filters: { project, dateFrom, dateTo, keyword },
       projects: (projects || []).map((p) => ({
         id: p.id,
-        name: getProjectLabel(p) || String(p.id || "")
+        name: getProjectLabel(p) || PROJECT_ID_TO_LABEL[p.id] || String(p.id || "")
       })),
       counts: {
         ...cardCounts,
@@ -170,7 +177,7 @@ export default async function handler(req, res) {
       items: (rows || []).map((row) => ({
         ...row,
         project_name:
-          projectNameById[row.project_id] || String(row.project_id || "未設定")
+          projectNameById[row.project_id] || PROJECT_ID_TO_LABEL[row.project_id] || String(row.project_id || "未設定")
       }))
     });
   } catch (e) {
