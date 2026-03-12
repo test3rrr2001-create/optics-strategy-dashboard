@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Optics Strategy Dashboard</title>
+  <title>光学機器 戦略ニュース ・ 法令監視ダッシュボード</title>
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -339,64 +339,64 @@
 <body>
   <div class="container">
     <header>
-      <h1>Optics Strategy Dashboard</h1>
-      <div class="sub">光学機器市場 戦略ニュース・法令監視ダッシュボード</div>
+      <h1>光学機器 戦略ニュース・法令監視</h1>
+      <div class="sub">主要分野の市場トレンド・競合動向・規制情報を一括管理</div>
     </header>
 
     <section class="cards" id="cards"></section>
 
     <section class="panel">
-      <h2 class="panel-title">Filter / 絞り込み</h2>
+      <h2 class="panel-title">検索・フィルター</h2>
       <div class="filters">
         <div class="filter-group">
-          <label for="project">Project</label>
-          <select id="project"><option value="">すべてのプロジェクト</option></select>
+          <label for="project">監視分野</label>
+          <select id="project"><option value="">すべての分野</option></select>
         </div>
         <div class="filter-group">
-          <label for="dateFrom">Start Date</label>
+          <label for="dateFrom">期間（開始）</label>
           <input id="dateFrom" type="date" />
         </div>
         <div class="filter-group">
-          <label for="dateTo">End Date</label>
+          <label for="dateTo">期間（終了）</label>
           <input id="dateTo" type="date" />
         </div>
         <div class="filter-group">
-          <label for="keyword">Keyword</label>
-          <input id="keyword" type="text" placeholder="キーワードを検索..." />
+          <label for="keyword">キーワード</label>
+          <input id="keyword" type="text" placeholder="記事内を検索..." />
         </div>
         <div class="filter-group">
-          <button class="btn btn-primary" id="apply">検索実行</button>
+          <button class="btn btn-primary" id="apply">条件を適用</button>
         </div>
         <div class="filter-group">
-          <button class="btn btn-secondary" id="reset">クリア</button>
+          <button class="btn btn-secondary" id="reset">検索クリア</button>
         </div>
       </div>
     </section>
 
     <section class="split">
       <div class="panel">
-        <h2 class="panel-title">By Project / プロジェクト別</h2>
+        <h2 class="panel-title">分野別の収集状況</h2>
         <div class="list" id="projectCounts"></div>
       </div>
       <div class="panel">
-        <h2 class="panel-title">By Source / 情報元別</h2>
+        <h2 class="panel-title">配信元別の内訳</h2>
         <div class="list" id="sourceCounts"></div>
       </div>
     </section>
 
     <section class="charts">
       <div class="panel">
-        <h2 class="panel-title">Project Distribution</h2>
+        <h2 class="panel-title">分野別構成比</h2>
         <div class="chart-wrap"><svg id="projectPie" width="340" height="240" viewBox="0 0 340 240"></svg></div>
         <div class="chart-note" id="projectPieNote"></div>
       </div>
       <div class="panel">
-        <h2 class="panel-title">Source Distribution</h2>
+        <h2 class="panel-title">配信元別構成比</h2>
         <div class="chart-wrap"><svg id="sourcePie" width="340" height="240" viewBox="0 0 340 240"></svg></div>
         <div class="chart-note" id="sourcePieNote"></div>
       </div>
       <div class="panel trend">
-        <h2 class="panel-title">Daily Trend / 日次推移</h2>
+        <h2 class="panel-title">日次の収集件数推移</h2>
         <div class="chart-wrap"><svg id="trendLine" width="1200" height="300" viewBox="0 0 1200 300"></svg></div>
         <div class="chart-note" id="trendNote"></div>
       </div>
@@ -408,13 +408,13 @@
         <table>
           <thead>
             <tr>
-              <th>Collected</th>
-              <th>Project</th>
-              <th>Keyword</th>
-              <th>Title</th>
-              <th>Source</th>
-              <th>Published</th>
-              <th>Link</th>
+              <th>取得日時</th>
+              <th>分野</th>
+              <th>検索ワード</th>
+              <th>記事タイトル</th>
+              <th>配信元</th>
+              <th>発行日</th>
+              <th>詳細</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -627,7 +627,7 @@
 
         if (projectEl.options.length <= 1) {
           const currentVal = projectEl.value;
-          projectEl.innerHTML = '<option value="">すべてのプロジェクト</option>';
+          projectEl.innerHTML = '<option value="">すべての分野</option>';
           for (const p of json.projects || []) {
             const op = document.createElement("option");
             op.value = p.id;
