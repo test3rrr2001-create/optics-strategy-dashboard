@@ -726,10 +726,10 @@
             <div class="cards" style="margin-bottom:0" id="${key}-cards"></div>
           </div>
           <div class="panel">
-            <h2 class="panel-title">頻出ワードランキング <span class="panel-badge">Step 3で自動集計予定</span></h2>
-            <div class="word-rank" id="${key}-words">
-              ${dummyWordRank()}
-            </div>
+            <h2 class="panel-title">頻出ワードランキング
+              <span class="panel-badge">ニュースタイトルから自動集計</span>
+            </h2>
+            <div class="word-rank" id="${key}-words">読み込み中...</div>
           </div>
         </div>
         <div class="panel">
@@ -769,20 +769,18 @@
     `;
   }
 
-  function dummyWordRank() {
-    const words = [
-      { word: "AI検査", count: 28 },
-      { word: "自動化",  count: 22 },
-      { word: "高解像度", count: 18 },
-      { word: "センサー", count: 15 },
-      { word: "IoT",    count: 11 },
-    ];
-    const max = words[0].count;
-    return words.map((w, i) => `
+  // ===== 頻出ワードランキング表示 =====
+  function renderWordRank(containerId, words, max = 10) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const top = (words || []).slice(0, max);
+    if (!top.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px 0">データなし（ニュース収集後に表示されます）</div>'; return; }
+    const maxCount = top[0].count;
+    el.innerHTML = top.map((w, i) => `
       <div class="word-rank-row">
         <div class="rank-num ${i < 3 ? 'top' : ''}">${i+1}</div>
-        <div class="rank-word">${w.word}</div>
-        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(w.count/max*100)}%"></div></div>
+        <div class="rank-word">${escapeHtml(w.word)}</div>
+        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(w.count/maxCount*100)}%"></div></div>
         <div class="rank-count">${w.count}件</div>
       </div>
     `).join("");
@@ -1027,9 +1025,11 @@
       statusEl.textContent=`${json.items?.length||0} 件の結果が見つかりました`;
 
       // 分野ページのデータ更新
+      const wordFreq = json.wordFrequency || {};
       Object.keys(PROJECT_INFO).forEach(key=>{
         renderProjectCards(key,json.counts||{});
         renderProjectRows(key,json.items||[]);
+        renderWordRank(key + "-words", wordFreq[key] || []);
       });
     } catch(e){
       statusEl.textContent=`エラー: ${e.message}`;

@@ -76,6 +76,61 @@ function getProjectLabel(project) {
   );
 }
 
+// ===== 頻出ワード抽出 =====
+const STOPWORDS = new Set([
+  "の","に","は","を","た","が","で","て","と","し","れ","さ","ある","いる","も","する","から","な",
+  "こと","として","い","や","れる","など","なっ","ない","この","ため","その","あっ","よう","また",
+  "もの","という","あり","まで","られ","なる","へ","か","だ","これ","によって","により","おり","より",
+  "による","ず","なり","られる","において","ば","なかっ","なく","しかし","について","せ","だっ","その後",
+  "できる","それ","う","ので","なお","のみ","でき","き","つ","における","および","いう","さらに","でも",
+  "ら","たり","その他","に関して","に対して","では","ます","です","まし","まして","こちら","あちら",
+  "the","a","an","and","or","but","in","on","at","to","for","of","with","by","from","is","are",
+  "was","were","be","been","have","has","had","do","does","did","will","would","could","should",
+  "may","might","it","its","this","that","these","those","i","we","you","he","she","they"
+]);
+
+function extractWords(text) {
+  if (!text) return [];
+  const tokens = [];
+  const enWords = text.match(/[A-Za-z][A-Za-z0-9\-]{1,}/g) || [];
+  enWords.forEach(w => { if (!STOPWORDS.has(w.toLowerCase())) tokens.push(w); });
+  const jaWords = text.match(/[\u3040-\u9FFF\u30A0-\u30FF]{2,8}/g) || [];
+  jaWords.forEach(w => { if (!STOPWORDS.has(w)) tokens.push(w); });
+  return tokens;
+}
+
+function buildWordFrequency(rows, projectNameById, topN = 20) {
+  const freqAll = {};
+  const freqByProject = {};
+
+  for (const row of rows) {
+    const words = extractWords(row.title);
+    const projectKey = resolveCardKey(row.project_id,
+      projectNameById[row.project_id] || String(row.project_id || ""));
+
+    for (const word of words) {
+      freqAll[word] = (freqAll[word] || 0) + 1;
+      if (projectKey) {
+        if (!freqByProject[projectKey]) freqByProject[projectKey] = {};
+        freqByProject[projectKey][word] = (freqByProject[projectKey][word] || 0) + 1;
+      }
+    }
+  }
+
+  function toTopN(freq) {
+    return Object.entries(freq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, topN)
+      .map(([word, count]) => ({ word, count }));
+  }
+
+  const result = { all: toTopN(freqAll) };
+  for (const [key, freq] of Object.entries(freqByProject)) {
+    result[key] = toTopN(freq);
+  }
+  return result;
+}
+
 export default async function handler(req, res) {
   try {
     const supabase = createClient(
@@ -157,6 +212,9 @@ export default async function handler(req, res) {
       .filter(([d]) => d !== "unknown")
       .sort((a, b) => (a[0] < b[0] ? -1 : 1));
 
+    // 頻出ワード集計
+    const wordFrequency = buildWordFrequency(rows || [], projectNameById, 20);
+
     res.status(200).json({
       filters: { project, dateFrom, dateTo, keyword },
       projects: (projects || []).map((p) => ({
@@ -174,6 +232,7 @@ export default async function handler(req, res) {
         source: Object.entries(sourceCounts),
         day: byDaySorted
       },
+      wordFrequency,
       items: (rows || []).map((row) => ({
         ...row,
         project_name:
