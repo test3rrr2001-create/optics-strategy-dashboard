@@ -10,13 +10,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: rgba(30, 41, 59, 0.7);
-      --card-border: rgba(255, 255, 255, 0.1);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #22d3ee;
-      --accent-glow: rgba(34, 211, 238, 0.2);
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --accent-glow: rgba(37, 99, 235, 0.1);
       --success: #10b981;
       --white: #ffffff;
       --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -27,11 +28,9 @@
       margin: 0;
       font-family: var(--font-family);
       background-color: var(--bg);
-      background-image: 
-        radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
       color: var(--text-main);
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
 
     .container {
@@ -41,23 +40,21 @@
     }
 
     header {
-      margin-bottom: 40px;
-      border-left: 4px solid var(--accent);
-      padding-left: 20px;
+      margin-bottom: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     h1 {
       margin: 0;
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 800;
       letter-spacing: -0.025em;
-      background: linear-gradient(to right, var(--white), var(--accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--text-main);
     }
 
     .sub {
-      margin-top: 8px;
       color: var(--text-muted);
       font-size: 14px;
       font-weight: 500;
@@ -73,71 +70,58 @@
 
     .card {
       background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--card-border);
-      border-radius: 16px;
+      border-radius: 12px;
       padding: 24px;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
       border-color: var(--accent);
-      box-shadow: 0 10px 30px -10px var(--accent-glow);
     }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 2px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      opacity: 0; transition: opacity 0.3s;
-    }
-    .card:hover::before { opacity: 1; }
 
     .card .label {
       color: var(--text-muted);
-      font-size: 13px;
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-bottom: 12px;
-      font-weight: 600;
+      margin-bottom: 8px;
+      font-weight: 700;
     }
 
     .card .value {
-      font-size: 48px;
+      font-size: 40px;
       line-height: 1;
-      font-weight: 700;
-      color: var(--white);
+      font-weight: 800;
+      color: var(--text-main);
     }
 
     /* Panels */
     .panel {
       background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--card-border);
-      border-radius: 16px;
+      border-radius: 12px;
       padding: 24px;
       margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .panel-title {
       margin: 0 0 20px;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
-      color: var(--white);
+      color: var(--text-main);
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
     .panel-title::before {
       content: '';
       display: block;
-      width: 4px; height: 18px;
+      width: 3px; height: 16px;
       background: var(--accent);
       border-radius: 2px;
     }
@@ -156,17 +140,16 @@
       color: var(--text-muted);
       margin-bottom: 6px;
       font-weight: 600;
-      text-transform: uppercase;
     }
 
     input, select {
       width: 100%;
-      background: rgba(15, 23, 42, 0.5);
+      background: #fcfcfd;
       border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 12px;
+      border-radius: 8px;
+      padding: 10px 12px;
       font-size: 14px;
-      color: var(--white);
+      color: var(--text-main);
       font-family: inherit;
       transition: all 0.2s;
     }
@@ -174,36 +157,40 @@
     input:focus, select:focus {
       outline: none;
       border-color: var(--accent);
-      background: rgba(15, 23, 42, 0.8);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
     .btn {
       cursor: pointer;
-      font-weight: 700;
-      padding: 12px;
-      border-radius: 10px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
       border: 1px solid var(--card-border);
       transition: all 0.2s;
       font-family: inherit;
       font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .btn-primary {
       background: var(--accent);
       border-color: var(--accent);
-      color: var(--bg);
+      color: var(--white);
     }
     .btn-primary:hover {
-      filter: brightness(1.1);
-      box-shadow: 0 0 15px var(--accent-glow);
+      background: #1d4ed8;
+      border-color: #1d4ed8;
     }
 
     .btn-secondary {
-      background: transparent;
+      background: var(--white);
       color: var(--text-main);
     }
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.05);
+      background: #f1f5f9;
     }
 
     /* Lists & Charts */
@@ -220,16 +207,15 @@
       justify-content: space-between;
       align-items: center;
       padding: 12px 0;
-      border-bottom: 1px solid var(--card-border);
+      border-bottom: 1px solid #f1f5f9;
     }
     .list-row:last-child { border-bottom: none; }
 
     .badge {
-      background: rgba(34, 211, 238, 0.1);
+      background: var(--accent-soft);
       color: var(--accent);
-      border: 1px solid rgba(34, 211, 238, 0.2);
-      border-radius: 8px;
-      padding: 4px 12px;
+      border-radius: 6px;
+      padding: 4px 10px;
       font-weight: 700;
       font-size: 12px;
     }
@@ -247,7 +233,6 @@
       align-items: center;
       justify-content: center;
       min-height: 240px;
-      padding: 10px;
     }
 
     .chart-note {
@@ -261,8 +246,9 @@
     .table-container {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 16px;
+      border-radius: 12px;
       overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .table-wrap {
@@ -278,54 +264,55 @@
     }
 
     th {
-      background: rgba(15, 23, 42, 0.8);
+      background: #f8fafc;
       color: var(--text-muted);
       font-weight: 600;
       text-transform: uppercase;
       font-size: 11px;
       letter-spacing: 0.05em;
-      padding: 16px;
+      padding: 14px 16px;
       position: sticky;
       top: 0;
       z-index: 10;
+      border-bottom: 1px solid var(--card-border);
     }
 
     td {
-      padding: 16px;
-      border-bottom: 1px solid var(--card-border);
+      padding: 14px 16px;
+      border-bottom: 1px solid #f1f5f9;
       vertical-align: middle;
-      color: #cbd5e1;
+      color: var(--text-main);
     }
 
+    tr:last-child td { border-bottom: none; }
+
     tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
-      color: var(--white);
+      background: #f8fafc;
     }
 
     .project-tag {
       display: inline-block;
-      padding: 4px 10px;
-      border-radius: 6px;
+      padding: 4px 8px;
+      border-radius: 4px;
       font-size: 11px;
-      font-weight: 700;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--card-border);
+      font-weight: 600;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      border: 1px solid #e2e8f0;
     }
 
     .source-tag {
       color: var(--accent);
-      font-weight: 500;
+      font-weight: 600;
     }
 
     a {
       color: var(--accent);
       text-decoration: none;
       font-weight: 600;
-      transition: all 0.2s;
     }
     a:hover {
       text-decoration: underline;
-      filter: brightness(1.2);
     }
 
     .status {
@@ -335,13 +322,13 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      font-weight: 500;
     }
     .status::before {
       content: '';
       width: 8px; height: 8px;
       background: var(--success);
       border-radius: 50%;
-      box-shadow: 0 0 10px var(--success);
     }
 
     @media (max-width: 1024px) {
@@ -448,8 +435,7 @@
     const sourceCountsEl = document.getElementById("sourceCounts");
 
     const labels = { total:"総件数", microscope:"顕微鏡", industrial_endoscope:"工業用内視鏡", pipe_camera:"管内カメラ", beauty:"美容用" };
-    // Modern Vibrant Palette
-    const palette = ["#22d3ee", "#38bdf8", "#818cf8", "#a78bfa", "#f472b6", "#fb7185", "#fb923c", "#fbbf24"];
+    const palette = ["#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#4f46e5", "#6366f1", "#818cf8", "#a5b4fc"];
 
     function formatDate(v) { return v ? new Date(v).toLocaleDateString("ja-JP", {year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'}) : "-"; }
     function escapeHtml(v) { return String(v || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;"); }
@@ -479,7 +465,7 @@
           <td>${formatDate(item.created_at)}</td>
           <td><span class="project-tag">${escapeHtml(item.project_name || "-")}</span></td>
           <td style="color:var(--text-muted)">${escapeHtml(item.keyword || "-")}</td>
-          <td style="font-weight:500">${escapeHtml(item.title || "-")}</td>
+          <td style="font-weight:600">${escapeHtml(item.title || "-")}</td>
           <td><span class="source-tag">${escapeHtml(item.source || "-")}</span></td>
           <td>${formatDate(item.published_at)}</td>
           <td>${safeUrl ? `<a href="${safeUrl}" target="_blank" rel="noopener">VIEW</a>` : "-"}</td>
@@ -514,7 +500,7 @@
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`);
         path.setAttribute("fill", palette[i % palette.length]);
-        path.setAttribute("stroke", "var(--bg)");
+        path.setAttribute("stroke", "white");
         path.setAttribute("stroke-width", "2");
         svg.appendChild(path);
         angle += delta;
@@ -537,13 +523,13 @@
         text.setAttribute("y", y + 9);
         text.setAttribute("font-size", "11");
         text.setAttribute("fill", "var(--text-muted)");
-        text.setAttribute("font-weight", "500");
+        text.setAttribute("font-weight", "600");
         const displayName = name.length > 8 ? name.slice(0, 7) + '...' : name;
         text.textContent = `${displayName} (${value})`;
         svg.appendChild(text);
       });
 
-      note.textContent = `Total: ${total} results`;
+      note.textContent = `Total: ${total} items`;
     }
 
     function renderLine(entries) {
@@ -563,11 +549,11 @@
       const plotH = height - top - bottom;
       const maxY = Math.max(...data.map(([,v]) => Number(v)), 1);
 
-      // Gradient for Line
+      // Area Gradient
       const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
       defs.innerHTML = `
         <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.5"/>
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.2"/>
           <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
         </linearGradient>
       `;
@@ -579,7 +565,6 @@
         return {x, y, v, d};
       });
 
-      // Area under the line
       const areaPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
       let dStr = `M ${points[0].x} ${top + plotH} `;
       points.forEach(p => dStr += `L ${p.x} ${p.y} `);
@@ -603,7 +588,7 @@
         circle.setAttribute("cx", p.x);
         circle.setAttribute("cy", p.y);
         circle.setAttribute("r", "4");
-        circle.setAttribute("fill", "var(--bg)");
+        circle.setAttribute("fill", "white");
         circle.setAttribute("stroke", "var(--accent)");
         circle.setAttribute("stroke-width", "2");
         svg.appendChild(circle);
@@ -620,7 +605,7 @@
         }
       });
 
-      note.textContent = `過去 ${data.length} 日間の推移を表示`;
+      note.textContent = `過去 ${data.length} 日間のトレンド`;
     }
 
     function buildQuery() {
@@ -633,12 +618,12 @@
     }
 
     async function load() {
-      statusEl.textContent = "Loading data...";
+      statusEl.textContent = "読み込み中...";
       try {
         const query = buildQuery();
         const response = await fetch(`/api/dashboard/results${query ? `?${query}` : ""}`);
         const json = await response.json();
-        if (!response.ok) throw new Error(json.error || "Failed to fetch data");
+        if (!response.ok) throw new Error(json.error || "読み込みに失敗しました");
 
         if (projectEl.options.length <= 1) {
           const currentVal = projectEl.value;
@@ -660,9 +645,9 @@
         renderLine(json.chart?.day || []);
         renderRows(json.items || []);
 
-        statusEl.textContent = `${json.items?.length || 0} items found`;
+        statusEl.textContent = `${json.items?.length || 0} 件の結果が見つかりました`;
       } catch (e) {
-        statusEl.textContent = `Error: ${e.message}`;
+        statusEl.textContent = `エラー: ${e.message}`;
         console.error(e);
       }
     }
@@ -672,7 +657,6 @@
       projectEl.value = ""; dateFromEl.value = ""; dateToEl.value = ""; keywordEl.value = ""; load();
     });
     
-    // Initial Load
     load();
   </script>
 </body>
