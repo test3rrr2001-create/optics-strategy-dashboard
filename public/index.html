@@ -553,6 +553,12 @@
 
     <section class="cards" id="cards"></section>
 
+    <!-- 急上昇検索ワード (Home) -->
+    <div class="panel">
+      <h2 class="panel-title">急上昇検索ワード <span class="panel-badge">Step 4 先行実装</span></h2>
+      <div class="word-rank" id="home-trends">読み込み中...</div>
+    </div>
+
     <section class="panel">
       <h2 class="panel-title">検索・フィルター</h2>
       <div class="filters">
@@ -741,11 +747,8 @@
           </div>
         </div>
         <div class="panel">
-          <h2 class="panel-title">急上昇検索ワード <span class="panel-badge">Step 4で実装予定</span></h2>
-          <div class="insight-placeholder">
-            ここには、この分野に関連する急上昇中の検索ワードと変化率が表示されます。<br>
-            Google Trends等のデータ連携後に自動更新されます。
-          </div>
+          <h2 class="panel-title">急上昇検索ワード <span class="panel-badge">Step 4 先行実装</span></h2>
+          <div class="word-rank" id="${key}-trends">読み込み中...</div>
         </div>
         <div class="status" id="${key}-status"></div>
         <div class="table-container">
@@ -782,6 +785,30 @@
         <div class="rank-word">${escapeHtml(w.word)}</div>
         <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(w.count/maxCount*100)}%"></div></div>
         <div class="rank-count">${w.count}件</div>
+      </div>
+    `).join("");
+  }
+
+  // ===== 急上昇検索ワード表示 =====
+  function renderWordTrends(containerId, trends) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!trends || !trends.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px 0">データなし</div>'; return; }
+    
+    // トレンド用にスタイルを少し変えて再利用
+    el.innerHTML = trends.map((t, i) => `
+      <div class="word-rank-row" style="padding:14px 0; border-bottom:1px solid #f1f5f9;">
+        <div class="rank-num ${i < 3 ? 'top' : ''}" style="background:var(--accent-glow);color:var(--accent)">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+        </div>
+        <div class="rank-word" style="flex:auto">
+          <div style="font-weight:700; font-size:15px; margin-bottom:4px;">${escapeHtml(t.word)}</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.4;">${escapeHtml(t.memo)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px; font-weight:800; color:var(--success); margin-bottom:2px;">${escapeHtml(t.change_rate)}</div>
+          <div style="font-size:11px; color:var(--text-muted); font-weight:600;">関連 ${t.news_count}件</div>
+        </div>
       </div>
     `).join("");
   }
@@ -1042,7 +1069,32 @@
     projectEl.value=""; dateFromEl.value=""; dateToEl.value=""; keywordEl.value=""; load();
   });
 
+  // ===== トレンドデータ読み込み =====
+  async function loadTrends() {
+    try {
+      const res = await fetch("/api/dashboard/word-trends");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Trend load failed");
+      const trends = json.trends || {};
+      
+      // 分野ページに反映
+      Object.keys(PROJECT_INFO).forEach(key => {
+        renderWordTrends(key + "-trends", trends[key] || []);
+      });
+
+      // Homeには全分野を混ぜて上位を表示
+      const allTrends = [].concat(...Object.values(trends));
+      allTrends.sort((a,b) => parseInt(b.change_rate) - parseInt(a.change_rate));
+      renderWordTrends("home-trends", allTrends.slice(0, 5));
+
+    } catch(e) {
+      console.error(e);
+      document.getElementById("home-trends").textContent = "トレンド読み込みエラー";
+    }
+  }
+
   load();
+  loadTrends();
 </script>
 </body>
 </html>
