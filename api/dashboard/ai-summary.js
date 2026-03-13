@@ -58,10 +58,18 @@ JSON形式で以下の構造で出力してください。
     const apiJson = await apiResponse.json();
     if (!apiResponse.ok) {
       console.error("Gemini API Error:", apiJson);
+      
+      const status = apiResponse.status;
+      if (status === 429) {
+        throw new Error("APIの利用制限（リクエスト過多）に到達しました。しばらく待ってから再度お試しください。");
+      }
+      
       throw new Error(apiJson.error?.message || "AIの生成に失敗しました");
     }
 
-    let rawText = apiJson.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    let rawText = apiJson.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) throw new Error("AIから有効なテキストが返却されませんでした。");
+
     // バックティックスや不要な改行をトリミング
     rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
     
