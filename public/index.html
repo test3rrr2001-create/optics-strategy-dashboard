@@ -542,12 +542,20 @@
       </div>
     </div>
 
-    <!-- 将来のAI戦略サマリー (プレースホルダー) -->
+    <!-- AI戦略サマリー -->
     <div class="panel">
-      <h2 class="panel-title">戦略サマリー <span class="panel-badge">今後AI自動生成予定</span></h2>
-      <div class="insight-placeholder">
-        <strong>🤖 AI戦略サマリー</strong><br>
-        各分野のニュース・法令・検索トレンドを統合分析し、今月の重要シグナルと推奨アクションをここに表示予定です。
+      <h2 class="panel-title">AI戦略サマリー <span class="panel-badge" id="ai-summary-badge">分析中...</span></h2>
+      <div id="home-ai-summary" class="strategy-box" style="background:#fff; border-color:var(--card-border);">
+        <div class="insight-placeholder" id="home-ai-loading">
+          <div style="font-size:24px; margin-bottom:12px;">🤖</div>
+          <strong>AIが最新ニュースを分析中...</strong><br>
+          各分野の情報を統合して、今週のトレンドを抽出しています。
+        </div>
+        <div id="home-ai-content" style="display:none">
+          <p id="home-ai-text" style="font-weight:700; color:var(--text-main); margin-bottom:16px; font-size:16px;"></p>
+          <div style="font-size:11px; font-weight:700; color:var(--accent); margin-bottom:8px;">📌 注目シグナル</div>
+          <ul id="home-ai-signals" style="font-size:13px; color:var(--text-muted); padding-left:20px; margin-bottom:16px;"></ul>
+        </div>
       </div>
     </div>
 
@@ -739,11 +747,14 @@
           </div>
         </div>
         <div class="panel">
-          <h2 class="panel-title">今後の戦略提案 <span class="panel-badge">将来AI連携予定</span></h2>
-          <div class="strategy-box">
-            <div class="strategy-label">📌 現在の推奨アクション</div>
-            <p>${STRATEGY_NOTES[key]}</p>
-            <div class="ai-note">🤖 このコメントは現在手動記載です。将来的にAIが自動生成します。</div>
+          <h2 class="panel-title">今後の戦略提案 <span class="panel-badge" id="${key}-ai-badge">AI自動生成</span></h2>
+          <div class="strategy-box" id="${key}-strategy-box">
+            <div id="${key}-ai-loading" class="insight-placeholder" style="padding:10px; border:none; background:transparent;">分析中...</div>
+            <div id="${key}-ai-content" style="display:none">
+              <div class="strategy-label">📌 推奨される打ち手</div>
+              <ul id="${key}-ai-actions" style="font-size:14px; color:var(--text-muted); margin:0; padding-left:20px; line-height:1.8;"></ul>
+              <div class="ai-note" style="margin-top:16px;">🤖 Gemini 2.0 Flash によるリアルタイム戦略分析</div>
+            </div>
           </div>
         </div>
         <div class="panel">
@@ -1103,8 +1114,52 @@
     }
   }
 
+  // ===== AI戦略サマリー読み込み =====
+  async function loadAISummary(project = "") {
+    const isHome = project === "";
+    const prefix = isHome ? "home-ai" : project + "-ai";
+    const loadingEl = document.getElementById(prefix + "-loading");
+    const contentEl = document.getElementById(prefix + "-content");
+    const badgeEl = document.getElementById(isHome ? "ai-summary-badge" : project + "-ai-badge");
+
+    try {
+      const res = await fetch(`/api/dashboard/ai-summary${project ? "?project=" + project : ""}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "AI load failed");
+
+      if (loadingEl) loadingEl.style.display = "none";
+      if (contentEl) contentEl.style.display = "block";
+      if (badgeEl) {
+        badgeEl.textContent = "Gemini分析完了";
+        badgeEl.style.background = "#dcfce7";
+        badgeEl.style.color = "#166534";
+      }
+
+      if (isHome) {
+        document.getElementById("home-ai-text").textContent = json.summary || "分析中...";
+        const signalsEl = document.getElementById("home-ai-signals");
+        signalsEl.innerHTML = (json.signals || []).map(s => `<li>${escapeHtml(s)}</li>`).join("");
+      } else {
+        const actionsEl = document.getElementById(project + "-ai-actions");
+        if (actionsEl) {
+          actionsEl.innerHTML = (json.actions || []).map(a => `<li>${escapeHtml(a)}</li>`).join("");
+        }
+      }
+    } catch(e) {
+      console.error(e);
+      if (loadingEl) loadingEl.textContent = "AIサマリーの生成に失敗しました";
+    }
+  }
+
   load();
   loadTrends();
+  loadAISummary(); // Home用
+
+  // 分野別のAIサマリーはページ生成後に呼ぶ
+  setTimeout(() => {
+    const map = { microscope: 1, industrial_endoscope: 2, pipe_camera: 3, beauty: 4 };
+    Object.keys(map).forEach(key => loadAISummary(map[key]));
+  }, 1000);
 </script>
 </body>
 </html>
