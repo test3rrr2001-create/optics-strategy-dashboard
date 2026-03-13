@@ -43,9 +43,12 @@ JSON形式で以下の構造で出力してください。
 `;
 
     // 3. Gemini API (Google AI Studio) の呼び出し
-    // 本来は process.env.GEMINI_API_KEY を使うべきだが、指示に従い提供されたキーを直接使用
-    const GEMINI_API_KEY = "AIzaSyCSLQdbFvGFo4CTDQPefc0nFTGmcKb1NdE";
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    if (!GEMINI_API_KEY) {
+      throw new Error("サーバーサイドのAPIキー設定が不足しています。");
+    }
     const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
 
     const apiResponse = await fetch(apiURL, {
       method: "POST",
