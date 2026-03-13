@@ -11,8 +11,14 @@ const STOPWORDS = new Set([
 
 function extractWords(text) {
   if (!text) return [];
-  const jaWords = text.match(/[\u3040-\u9FFF\u30A0-\u30FF]{2,8}/g) || [];
-  return jaWords.filter(w => !STOPWORDS.has(w));
+  // ひらがなや記号を境目として、漢字・カタカナ・英数字の連続を抽出
+  const words = text.match(/[a-zA-Z0-9\u4E00-\u9FFF\u30A0-\u30FF\-]+/g) || [];
+  return words.filter(w => {
+    // 1文字だけの言葉や、数字だけのものはノイズになりやすいので除外
+    if (w.length < 2) return false;
+    if (/^[0-9]+$/.test(w)) return false;
+    return !STOPWORDS.has(w);
+  });
 }
 
 export default async function handler(req, res) {
