@@ -555,7 +555,7 @@
 
     <!-- 急上昇検索ワード (Home) -->
     <div class="panel">
-      <h2 class="panel-title">急上昇検索ワード <span class="panel-badge">Step 4 先行実装</span></h2>
+      <h2 class="panel-title">急上昇検索ワード <span class="panel-badge" id="home-trends-badge">分析中...</span></h2>
       <div class="word-rank" id="home-trends">読み込み中...</div>
     </div>
 
@@ -747,7 +747,7 @@
           </div>
         </div>
         <div class="panel">
-          <h2 class="panel-title">急上昇検索ワード <span class="panel-badge">Step 4 先行実装</span></h2>
+          <h2 class="panel-title">急上昇検索ワード <span class="panel-badge" id="${key}-trends-badge">分析中...</span></h2>
           <div class="word-rank" id="${key}-trends">読み込み中...</div>
         </div>
         <div class="status" id="${key}-status"></div>
@@ -790,9 +790,19 @@
   }
 
   // ===== 急上昇検索ワード表示 =====
-  function renderWordTrends(containerId, trends) {
+  function renderWordTrends(containerId, trends, isSample = false) {
     const el = document.getElementById(containerId);
     if (!el) return;
+    
+    // バッジを更新
+    const badgeId = containerId + "-badge";
+    const badgeEl = document.getElementById(badgeId);
+    if (badgeEl) {
+      badgeEl.textContent = isSample ? "サンプル" : "リアルタイム分析";
+      badgeEl.style.background = isSample ? "#f1f5f9" : "#eff6ff";
+      badgeEl.style.color = isSample ? "#64748b" : "#2563eb";
+    }
+
     if (!trends || !trends.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px 0">データなし</div>'; return; }
     
     // トレンド用にスタイルを少し変えて再利用
@@ -1079,13 +1089,13 @@
       
       // 分野ページに反映
       Object.keys(PROJECT_INFO).forEach(key => {
-        renderWordTrends(key + "-trends", trends[key] || []);
+        renderWordTrends(key + "-trends", trends[key] || [], json.is_sample);
       });
 
       // Homeには全分野を混ぜて上位を表示
       const allTrends = [].concat(...Object.values(trends));
       allTrends.sort((a,b) => parseInt(b.change_rate) - parseInt(a.change_rate));
-      renderWordTrends("home-trends", allTrends.slice(0, 5));
+      renderWordTrends("home-trends", allTrends.slice(0, 5), json.is_sample);
 
     } catch(e) {
       console.error(e);

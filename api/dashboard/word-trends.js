@@ -1,33 +1,92 @@
+import { createClient } from "@supabase/supabase-js";
+
+// ストップワード（共通化したいが、ひとまずここにも定義）
+const STOPWORDS = new Set([
+  "の","に","は","を","た","が","で","て","と","し","れ","さ","ある","いる","も","する","から","な",
+  "こと","として","い","や","れる","など","なっ","ない","この","ため","その","あっ","よう","また",
+  "もの","という","あり","まで","られ","なる","へ","か","だ","これ","によって","により","おり","より",
+  "による","ず","なり","られる","において","ば","なかっ","なく","しかし","について","せ","だっ","その後",
+  "できる","それ","う","ので","なお","のみ","でき","き","つ","における","および","いう","さらに","でも"
+]);
+
+function extractWords(text) {
+  if (!text) return [];
+  const jaWords = text.match(/[\u3040-\u9FFF\u30A0-\u30FF]{2,8}/g) || [];
+  return jaWords.filter(w => !STOPWORDS.has(w));
+}
+
 export default async function handler(req, res) {
   try {
-    // 検索急上昇ワードのダミーデータ（将来的にGoogle Trends APIや自社DB集計と連携予定）
-    const dummyTrends = {
-      microscope: [
-        { word: "デジタル病理AI", change_rate: "+185%", news_count: 14, memo: "スマート病院構想に関連して急増" },
-        { word: "手術用顕微鏡 4K", change_rate: "+120%", news_count: 8, memo: "微細外科手術の需要増" },
-        { word: "蛍光顕微鏡", change_rate: "+65%", news_count: 5, memo: "バイオ研究分野で安定した伸び" }
-      ],
-      industrial_endoscope: [
-        { word: "配管自動点検ロボット", change_rate: "+210%", news_count: 18, memo: "インフラ老朽化対策で急浮上" },
-        { word: "極細径内視鏡", change_rate: "+145%", news_count: 11, memo: "EVモーター検査用途" },
-        { word: "AI欠陥判定", change_rate: "+90%", news_count: 22, memo: "製造ラインの省人化による恒常的ニーズ" }
-      ],
-      pipe_camera: [
-        { word: "下水道法改正", change_rate: "+315%", news_count: 25, memo: "自治体の点検義務強化に関する報道" },
-        { word: "管内カメラ ドローン", change_rate: "+170%", news_count: 9, memo: "新技術の試験導入ニュース" },
-        { word: "非破壊検査", change_rate: "+85%", news_count: 14, memo: "関連キーワードとしての出現増加" }
-      ],
-      beauty: [
-        { word: "スマホ肌診断", change_rate: "+250%", news_count: 32, memo: "D2Cコスメブランドの導入拡大" },
-        { word: "マイクロスコープ 頭皮", change_rate: "+130%", news_count: 15, memo: "美容室の単価向上メニューとして注目" },
-        { word: "非接触スキンケア", change_rate: "+75%", news_count: 8, memo: "継続的な衛生意識の高まり" }
-      ]
-    };
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
 
-    // ランダムな遅延を入れてAPI通信っぽくする（不要なら削除可）
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // 直近30日のニュースから頻出ワードを「トレンド」として集計
+    const { data: rows, error } = await supabase
+      .from("daily_results")
+      .select("project_id, title")
+      .order("created_at", { ascending: false })
+      .limit(1000);
 
-    res.status(200).json({ trends: dummyTrends });
+    if (error) throw error;
+
+    const PROJECT_ID_TO_KEY = { 1: "microscope", 2: "industrial_endoscope", 3: "pipe_camera", 4: "beauty" };
+    const analysis = {};
+
+    rows.forEach(row => {
+      const key = PROJECT_ID_TO_KEY[row.project_id];
+      if (!key) return;
+      if (!analysis[key]) analysis[key] = {};
+      const words = extractWords(row.title);
+      words.forEach(w => {
+        analysis[key][w] = (analysis[key][w] || 0) + 1;
+      });
+    });
+
+    const trends = {};
+    let hasRealData = false;
+
+    Object.keys(PROJECT_ID_TO_KEY).forEach(id => {
+      const key = PROJECT_ID_TO_KEY[id];
+      const freq = analysis[key] || {};
+      const sorted = Object.entries(freq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([word, count]) => ({
+          word,
+          change_rate: "New",
+          news_count: count,
+          memo: "最近のタイトルから自動抽出"
+        }));
+      
+      if (sorted.length > 0) {
+        trends[key] = sorted;
+        hasRealData = true;
+      }
+    });
+
+    // データが全くない場合はダミーデータを返す（サンプルとして表示）
+    if (!hasRealData) {
+      const dummyTrends = {
+        microscope: [
+          { word: "デジタル病理AI", change_rate: "+185%", news_count: 14, memo: "スマート病院構想に関連して急増" },
+          { word: "手術用顕微鏡 4K", change_rate: "+120%", news_count: 8, memo: "微細外科手術の需要増" }
+        ],
+        industrial_endoscope: [
+          { word: "配管自動点検ロボット", change_rate: "+210%", news_count: 18, memo: "インフラ老朽化対策で急浮上" }
+        ],
+        pipe_camera: [
+          { word: "下水道法改正", change_rate: "+315%", news_count: 25, memo: "自治体の点検義務強化に関する報道" }
+        ],
+        beauty: [
+          { word: "スマホ肌診断", change_rate: "+250%", news_count: 32, memo: "D2Cコスメブランドの導入拡大" }
+        ]
+      };
+      return res.status(200).json({ trends: dummyTrends, is_sample: true });
+    }
+
+    res.status(200).json({ trends, is_sample: false });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: e.message });
