@@ -741,13 +741,21 @@
 <div class="page" id="page-tech">
   <div class="container">
     <div class="page-header">
-      <h1>技術トレンド</h1>
-      <div class="sub">光学機器分野の最新技術動向を追跡</div>
+      <h1>🔬 技術トレンド</h1>
+      <div class="sub">光学機器分野の最新技術動向、特許情報、R&Dニュースを追跡します。</div>
     </div>
-    <div class="coming-soon">
-      <div class="icon">🔬</div>
-      <h2>準備中</h2>
-      <p>特許データや技術系RSSフィードを活用した技術トレンド分析機能を将来実装予定です。</p>
+    
+    <div class="section-grid-2">
+      <div class="panel">
+        <h2 class="panel-title">注目技術キーワード</h2>
+        <div id="tech-tags-summary" class="word-rank"></div>
+      </div>
+      <div class="panel">
+        <h2 class="panel-title">R&D・特許タイムライン <span class="panel-badge" id="tech-timeline-badge">最新50件</span></h2>
+        <div class="timeline" id="tech-timeline">
+          <div style="text-align:center; padding:40px; color:var(--text-muted);">読み込み中...</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1320,10 +1328,70 @@
     }
   }
 
+  // ===== 技術トレンドニュース読み込み =====
+  async function loadTechTrends() {
+    const timelineEl = document.getElementById("tech-timeline");
+    const summaryEl = document.getElementById("tech-tags-summary");
+    if (!timelineEl) return;
+
+    try {
+      const res = await fetch("/api/dashboard/tech-results");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Tech load failed");
+
+      const tags = json.tags || [];
+      const news = json.news || [];
+
+      // サマリー (タグ別件数)
+      if (tags.length === 0) {
+        summaryEl.innerHTML = '<div style="color:var(--text-muted); padding:10px 0; text-align:center;">データがありません</div>';
+      } else {
+        const maxCt = tags[0].count;
+        summaryEl.innerHTML = tags.map((t, i) => `
+          <div class="word-rank-row">
+            <div class="rank-num ${i < 3 ? 'top' : ''}">${i+1}</div>
+            <div class="rank-word">${escapeHtml(t.word)}</div>
+            <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(t.count/maxCt*100)}%"></div></div>
+            <div class="rank-count">${t.count}件</div>
+          </div>
+        `).join("");
+      }
+
+      // タイムライン
+      if (!news.length) {
+        timelineEl.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);">新しい技術トレンド情報はありません。</div>';
+        return;
+      }
+
+      timelineEl.innerHTML = news.map(n => {
+        const tagHtml = (n.tags || []).map(t => `<span class="timeline-tag" style="background:var(--accent); margin-right:4px;">${escapeHtml(t)}</span>`).join("");
+        return `
+        <div class="timeline-item">
+          <div class="timeline-dot" style="border-color:var(--accent)"></div>
+          <div class="timeline-date">${new Date(n.published_at).toLocaleDateString("ja-JP")}</div>
+          <div class="timeline-content">
+            <div style="margin-bottom:8px;">${tagHtml}</div>
+            <div style="font-weight:700; font-size:14px; margin-bottom:8px;">${escapeHtml(n.title)}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; color:var(--text-muted); font-weight:600;">${escapeHtml(n.source)}</span>
+              <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener" style="font-size:12px;">詳細を見る →</a>
+            </div>
+          </div>
+        </div>
+      `;
+      }).join("");
+
+    } catch (e) {
+      console.error(e);
+      timelineEl.innerHTML = `<div style="text-align:center; padding:40px; color:var(--danger);">読み込みエラー: ${e.message}</div>`;
+    }
+  }
+
   load();
   loadTrends();
   loadLawNews();
   loadCompetitorData();
+  loadTechTrends();
   loadAISummary(); // Home用
 
   // 分野別のAIサマリーはページ生成後に呼ぶ
