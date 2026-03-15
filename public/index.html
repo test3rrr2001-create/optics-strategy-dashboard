@@ -407,6 +407,60 @@
     .rank-bar-wrap { width: 80px; height: 6px; background: #e2e8f0; border-radius: 3px; }
     .rank-bar { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.4s ease; }
     .rank-count { font-size: 12px; color: var(--text-muted); font-weight: 600; min-width: 36px; text-align: right; }
+    
+    /* ===== TIMELINE (競合監視) ===== */
+    .timeline {
+      position: relative;
+      padding: 20px 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 19px; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--card-border);
+    }
+    .timeline-item {
+      position: relative;
+      padding-left: 50px;
+      margin-bottom: 30px;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: 12px; top: 4px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 3px solid var(--accent);
+      z-index: 2;
+    }
+    .timeline-date {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .timeline-content {
+      background: var(--white);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: all 0.2s;
+    }
+    .timeline-content:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-color: var(--accent);
+    }
+    .timeline-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+      color: var(--white);
+    }
 
     /* ===== COMING SOON ===== */
     .coming-soon {
@@ -702,13 +756,21 @@
 <div class="page" id="page-competitor">
   <div class="container">
     <div class="page-header">
-      <h1>競合監視</h1>
-      <div class="sub">主要競合他社の動向・製品リリース・価格変動を追跡</div>
+      <h1>🎯 競合監視</h1>
+      <div class="sub">主要競合他社（オリンパス、キーエンス、ニコン、ツァイス等）の動向をタイムラインで集中監視します。</div>
     </div>
-    <div class="coming-soon">
-      <div class="icon">🎯</div>
-      <h2>準備中</h2>
-      <p>競合他社のニュース・プレスリリース・IR情報を収集・整理する機能を将来実装予定です。</p>
+    
+    <div class="section-grid-2">
+      <div class="panel">
+        <h2 class="panel-title">競合他社別のアクティビティ</h2>
+        <div id="competitor-list-summary" class="word-rank"></div>
+      </div>
+      <div class="panel">
+        <h2 class="panel-title">最新の競合トピックス</h2>
+        <div class="timeline" id="competitor-timeline">
+          <div style="text-align:center; padding:40px; color:var(--text-muted);">読み込み中...</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1195,13 +1257,71 @@
       }
     } catch (e) {
       console.error(e);
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger);">読み込みエラー: ${e.message}</td></tr>`;
+  }
+
+  // ===== 競合ニュース読み込み =====
+  async function loadCompetitorData() {
+    const timelineEl = document.getElementById("competitor-timeline");
+    const summaryEl = document.getElementById("competitor-list-summary");
+    if (!timelineEl) return;
+
+    try {
+      const res = await fetch("/api/dashboard/competitor-results");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Competitor load failed");
+
+      const comps = json.competitors || [];
+
+      // サマリー (企業別件数)
+      summaryEl.innerHTML = comps.map(c => `
+        <div class="word-rank-row">
+          <div class="rank-word" style="display:flex; align-items:center; gap:10px;">
+            <div style="width:12px; height:12px; border-radius:3px; background:${c.color}"></div>
+            ${escapeHtml(c.competitor_name)}
+          </div>
+          <div class="badge" style="background:${c.color}20; color:${c.color}">${c.news.length}件</div>
+        </div>
+      `).join("");
+
+      // タイムライン (全社のニュースを統合して日付順)
+      const allNews = [];
+      comps.forEach(c => {
+        c.news.forEach(n => {
+          allNews.push({ ...n, competitor_name: c.competitor_name, color: c.color });
+        });
+      });
+      allNews.sort((a,b) => new Date(b.published_at) - new Date(a.published_at));
+
+      if (!allNews.length) {
+        timelineEl.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);">ニュースから競合他社の動向は検出されませんでした。</div>';
+        return;
+      }
+
+      timelineEl.innerHTML = allNews.map(n => `
+        <div class="timeline-item">
+          <div class="timeline-dot" style="border-color:${n.color}"></div>
+          <div class="timeline-date">${new Date(n.published_at).toLocaleDateString("ja-JP")}</div>
+          <div class="timeline-content">
+            <div class="timeline-tag" style="background:${n.color}">${escapeHtml(n.competitor_name)}</div>
+            <div style="font-weight:700; font-size:14px; margin-bottom:8px;">${escapeHtml(n.title)}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; color:var(--text-muted); font-weight:600;">${escapeHtml(n.source)}</span>
+              <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener" style="font-size:12px;">記事を読む →</a>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+    } catch (e) {
+      console.error(e);
+      timelineEl.innerHTML = `<div style="text-align:center; padding:40px; color:var(--danger);">読み込みエラー: ${e.message}</div>`;
     }
   }
 
   load();
   loadTrends();
   loadLawNews();
+  loadCompetitorData();
   loadAISummary(); // Home用
 
   // 分野別のAIサマリーはページ生成後に呼ぶ
