@@ -7,11 +7,11 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // project_id が 'tech_trend' のものを抽出
+    // keyword が '技術トレンド' のものを抽出
     const { data: techNews, error } = await supabase
       .from("daily_results")
       .select("*")
-      .eq("project_id", "tech_trend")
+      .eq("keyword", "技術トレンド")
       .order("published_at", { ascending: false })
       .limit(50);
 

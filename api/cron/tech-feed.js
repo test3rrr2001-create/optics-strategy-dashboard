@@ -47,7 +47,6 @@ export default async function handler(req, res) {
             url: finalUrl.trim(),
             source: feed.name,
             keyword: "技術トレンド", // タグとして利用
-            project_id: "tech_trend", // 特別なプロジェクトID
             published_at: pubDate.toISOString()
           }, { onConflict: 'url' });
 
