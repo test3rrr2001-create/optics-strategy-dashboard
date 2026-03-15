@@ -656,13 +656,29 @@
 <div class="page" id="page-law">
   <div class="container">
     <div class="page-header">
-      <h1>法令監視</h1>
-      <div class="sub">光学機器関連の法令・規制改正を自動収集・整理</div>
+      <h1>⚖️ 法令監視</h1>
+      <div class="sub">光学・医療機器に関連する省庁の最新公示・規制ニュースを自動収集しています。</div>
     </div>
-    <div class="coming-soon">
-      <div class="icon">⚖️</div>
-      <h2>準備中</h2>
-      <p>政府・省庁のRSSフィードから法令・規制情報を自動収集する機能を実装予定です（Step 6で実施）。</p>
+    
+    <div class="panel">
+      <h2 class="panel-title">法令・公示ニュース <span class="panel-badge" id="law-status-badge">最新50件</span></h2>
+      <div class="table-container">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:120px">公示日</th>
+                <th style="width:140px">発信元</th>
+                <th style="width:100px">カテゴリ</th>
+                <th>タイトル</th>
+                <th style="width:80px">重要度</th>
+                <th style="width:60px">詳細</th>
+              </tr>
+            </thead>
+            <tbody id="law-rows"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1151,8 +1167,41 @@
     }
   }
 
+  // ===== 法令ニュース読み込み =====
+  async function loadLawNews() {
+    const tbody = document.getElementById("law-rows");
+    if (!tbody) return;
+    try {
+      const res = await fetch("/api/dashboard/law-results");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Law load failed");
+
+      tbody.innerHTML = (json || []).map(item => {
+        const impColor = item.importance === "High" ? "var(--danger)" : (item.importance === "Medium" ? "var(--warning)" : "var(--success)");
+        return `
+          <tr>
+            <td style="white-space:nowrap">${new Date(item.published_at).toLocaleDateString("ja-JP")}</td>
+            <td><span class="source-tag">${escapeHtml(item.source)}</span></td>
+            <td><span class="project-tag" style="background:var(--accent-soft); border:none;">${escapeHtml(item.category)}</span></td>
+            <td style="font-weight:600">${escapeHtml(item.title)}</td>
+            <td><span style="color:${impColor}; font-weight:800; font-size:11px;">● ${item.importance}</span></td>
+            <td><a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">表示</a></td>
+          </tr>
+        `;
+      }).join("");
+
+      if (!json.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-muted);">現在、光学機器に関連する新しい公示情報はありません。</td></tr>';
+      }
+    } catch (e) {
+      console.error(e);
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger);">読み込みエラー: ${e.message}</td></tr>`;
+    }
+  }
+
   load();
   loadTrends();
+  loadLawNews();
   loadAISummary(); // Home用
 
   // 分野別のAIサマリーはページ生成後に呼ぶ
