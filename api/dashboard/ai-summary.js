@@ -9,7 +9,22 @@ export default async function handler(req, res) {
 
     const project = req.query.project || "";
     
-    // 1. 最新のニュース記事と言葉のトレンドを取得（AIのインプットにする）
+    // 1. キャッシュの確認（直近12時間以内のデータがあればそれを使う）
+    const cacheLimit = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+    const { data: cachedData, error: cacheError } = await supabase
+      .from("ai_summaries")
+      .select("summary_json")
+      .eq("project_id", project)
+      .gt("created_at", cacheLimit)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (!cacheError && cachedData && cachedData.length > 0) {
+      console.log("Using cached AI summary for project:", project || "all");
+      return res.status(200).json(cachedData[0].summary_json);
+    }
+
+    // 2. 最新のニュース記事と言葉のトレンドを取得（AIのインプットにする）
     let query = supabase
       .from("daily_results")
       .select("title, project_id, keyword")
@@ -20,7 +35,7 @@ export default async function handler(req, res) {
     const { data: news, error: newsError } = await query;
     if (newsError) throw newsError;
 
-    // 2. プロンプトの作成
+    // 3. プロンプトの作成
     const newsText = news.map(n => `- ${n.title} (キーワード: ${n.keyword})`).join("\n");
     const projectNames = { 1: "顕微鏡", 2: "工業用内視鏡", 3: "管内カメラ", 4: "美容用" };
     const currentProject = projectNames[project] || "全分野";
@@ -42,7 +57,7 @@ JSON形式で以下の構造で出力してください。
 不要な解説やMarkdownのバックティックス（\`\`\`jsonなど）は含めず、純粋なJSON文字列のみを返してください。
 `;
 
-    // 3. Gemini API (Google AI Studio) の呼び出し
+    // 4. Gemini API (Google AI Studio) の呼び出し
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) {
       throw new Error("サーバーサイドのAPIキー設定が不足しています。");
@@ -77,6 +92,12 @@ JSON形式で以下の構造で出力してください。
     rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
     
     const result = JSON.parse(rawText);
+
+    // 5. 結果をキャッシュに保存
+    await supabase.from("ai_summaries").insert({
+      project_id: project,
+      summary_json: result
+    });
 
     res.status(200).json(result);
   } catch (e) {
