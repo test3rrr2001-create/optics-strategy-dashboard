@@ -15,13 +15,22 @@ export default async function handler(req, res) {
     if (compError) throw compError;
 
     // 2. 既存のニュースから競合名が含まれるものを抽出
-    // 本当は全文検索が望ましいが、簡易的にタイトルにキーワードが含まれるものを取得
-    // ここでは各社の search_query を使って OR 検索（LIKE）を行う必要があるが
-    // Supabase JS クライアントで複雑な OR LIKE は手間なため、
-    // まずは直近100件のニュースを取得してメモリ上でフィルタリングする
+    // まずは最新のニュースとプロジェクト情報を取得してメモリ上でマッピングする
+    const { data: projects, error: projectError } = await supabase
+      .from("projects")
+      .select("*");
+    
+    // プロジェクト名マッピング用オブジェクト
+    const projectNameById = {};
+    if (!projectError && projects) {
+      projects.forEach(p => {
+        projectNameById[p.id] = p.name || p.project_name || "";
+      });
+    }
+
     const { data: allNews, error: newsError } = await supabase
       .from("daily_results")
-      .select("*, projects(name)")
+      .select("*")
       .order("published_at", { ascending: false })
       .limit(200);
 
@@ -29,12 +38,15 @@ export default async function handler(req, res) {
 
     const results = competitors.map(comp => {
       // search_query を分割 (OR で区切られている想定)
-      const keywords = comp.search_query.split(" OR ").map(k => k.trim().toLowerCase());
+      const keywords = (comp.search_query || "").split(" OR ").map(k => k.trim().toLowerCase());
       
       const filteredNews = allNews.filter(news => {
         const title = (news.title || "").toLowerCase();
         return keywords.some(k => title.includes(k));
-      });
+      }).map(news => ({
+        ...news,
+        project_name: projectNameById[news.project_id] || "未設定"
+      }));
 
       return {
         competitor_name: comp.name,
@@ -45,7 +57,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ competitors: results });
   } catch (error) {
-    console.error(error);
+    console.error("Competitor API Error:", error);
     res.status(500).json({ error: error.message });
   }
 }

@@ -78,30 +78,57 @@ JSON形式で以下の構造で出力してください。
       console.error("Gemini API Error:", apiJson);
       
       const status = apiResponse.status;
+      if (status === 401 || status === 403) {
+        throw new Error(`APIキーが無効、または権限がありません (Status: ${status})。設定を確認してください。`);
+      }
       if (status === 429) {
         throw new Error("APIの利用制限（リクエスト過多）に到達しました。しばらく待ってから再度お試しください。");
       }
       
-      throw new Error(apiJson.error?.message || "AIの生成に失敗しました");
+      throw new Error(apiJson.error?.message || `AIの生成に失敗しました (Status: ${status})`);
     }
 
     let rawText = apiJson.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) throw new Error("AIから有効なテキストが返却されませんでした。");
+    if (!rawText) {
+      console.error("Gemini API Empty Response:", apiJson);
+      throw new Error("AIから有効なテキストが返却されませんでした。内容をご確認ください。");
+    }
 
-    // バックティックスや不要な改行をトリミング
-    rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+    // バックティックスや不要な改行をトリミング（JSONとしてパースできるよう調整）
+    rawText = rawText.trim();
+    if (rawText.startsWith("```json")) {
+      rawText = rawText.replace(/^```json/, "").replace(/```$/, "").trim();
+    } else if (rawText.startsWith("```")) {
+      rawText = rawText.replace(/^```/, "").replace(/```$/, "").trim();
+    }
     
-    const result = JSON.parse(rawText);
+    let result;
+    try {
+      result = JSON.parse(rawText);
+    } catch (parseError) {
+      console.error("JSON Parse Error. Raw Text:", rawText);
+      // JSONではない場合、テキストをsummaryに入れて返す
+      result = {
+        summary: rawText.slice(0, 40),
+        signals: ["解析エラーが発生しました"],
+        actions: ["プロンプトの出力を確認してください"]
+      };
+    }
 
     // 5. 結果をキャッシュに保存
-    await supabase.from("ai_summaries").insert({
-      project_id: project,
-      summary_json: result
-    });
+    try {
+      await supabase.from("ai_summaries").insert({
+        project_id: project,
+        summary_json: result
+      });
+    } catch (dbError) {
+      console.warn("Cache Save Error:", dbError);
+      // キャッシュ保存失敗はAPI応答自体には影響させない
+    }
 
     res.status(200).json(result);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: e.message });
+    console.error("AI Summary API Error:", e);
+    res.status(500).json({ error: e.message || "予期せぬエラーが発生しました" });
   }
 }
