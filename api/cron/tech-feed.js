@@ -7,69 +7,92 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 技術・R&D系のRSSフィードリスト
-    const feeds = [
-      { name: "産総研 (AIST)", url: "https://news.google.com/rss/search?q=%E7%94%A3%E7%B7%8F%E7%A0%94+%E3%83%97%E3%83%AC%E3%82%B9%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9&hl=ja&gl=JP&ceid=JP:ja" },
-      { name: "理化学研究所", url: "https://news.google.com/rss/search?q=%E7%90%86%E5%8C%96%E5%AD%A6%E7%A0%94%E7%A9%B6%E6%89%80+%E3%83%97%E3%83%AC%E3%82%B9%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9&hl=ja&gl=JP&ceid=JP:ja" },
-      { name: "特許・技術ニュース (Google)", url: "https://news.google.com/rss/search?q=%E5%85%89%E5%AD%A6+%E7%89%B9%E8%A8%B1+OR+%E5%86%85%E8%A6%96%E9%8F%A1+%E7%89%B9%E8%A8%B1&hl=ja&gl=JP&ceid=JP:ja" }
+    // 光学機器・技術トレンドに関連するキーワード検索クエリ
+    const techKeywords = [
+      "光学機器 新技術 開発",
+      "内視鏡 開発 AI",
+      "顕微鏡 技術 特許",
+      "レーザー 光学 新製品",
+      "産総研 光学 研究",
+      "理化学研究所 光学 発表",
+      "医療用カメラ 技術 開発",
+      "画像センサー 光学 新型",
     ];
 
-    // 技術関連のキーワード
-    const techKeywords = ["特許", "開発", "新技術", "AI", "画像認識", "センサー", "レーザー", "内視鏡", "顕微鏡", "光学", "発表"];
-
+    const errors = [];
     let addedCount = 0;
 
-    for (const feed of feeds) {
-      console.log(`Fetching ${feed.name}...`);
-      const response = await fetch(feed.url);
-      if (!response.ok) {
-        console.error(`Failed to fetch ${feed.name}: ${response.status}`);
-        continue;
-      }
-      const xmlText = await response.text();
+    for (const keyword of techKeywords) {
+      try {
+        const searchUrl =
+          "https://news.google.com/rss/search?q=" +
+          encodeURIComponent(keyword) +
+          "&hl=ja&gl=JP&ceid=JP:ja";
 
-      const items = xmlText.match(/<(item|entry)>[\s\S]*?<\/\1>/g) || [];
+        const response = await fetch(searchUrl, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (compatible; TechFeedBot/1.0; +https://vercel.app)",
+          },
+          signal: AbortSignal.timeout(10000),
+        });
 
-      for (const item of items) {
-        let title = (item.match(/<title>(.*?)<\/title>/)?.[1] || "")
-          .replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1")
-          .replace(/<[^>]+>/g, '')
-          .trim();
-
-        let url = "";
-        const linkMatch = item.match(/<link>(.*?)<\/link>/);
-        const linkHrefMatch = item.match(/<link[^>]+href=["'](.*?)["']/);
-        
-        if (linkMatch && linkMatch[1]) {
-          url = linkMatch[1];
-        } else if (linkHrefMatch && linkHrefMatch[1]) {
-          url = linkHrefMatch[1];
+        if (!response.ok) {
+          errors.push(`${keyword}: HTTP ${response.status}`);
+          continue;
         }
-        const finalUrl = url.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim();
 
-        const pubDateStr = item.match(/<(pubDate|dc:date|published|updated)>(.*?)<\/\1>/)?.[2] || "";
-        const pubDate = pubDateStr ? new Date(pubDateStr) : new Date();
+        const xmlText = await response.text();
 
-        // キーワードによるフィルタリング（Google Newsベースなので緩めにチェック）
-        const isRelevant = techKeywords.some(kw => title.includes(kw));
-        
-        if (isRelevant && finalUrl) {
-          // 既存の daily_results テーブルに tech_trend という特集プロジェクトとして保存
-          const { error } = await supabase.from("daily_results").upsert({
-            title: title,
-            url: finalUrl,
-            source: feed.name,
-            keyword: "技術トレンド", // タグとして利用
-            published_at: pubDate.toISOString()
-          }, { onConflict: 'url' });
+        // <item> タグを抽出（属性付きにも対応）
+        const items = xmlText.match(/<item[^>]*>[\s\S]*?<\/item>/g) || [];
 
-          if (!error) addedCount++;
-          else console.error(`DB Error: ${error.message}`);
+        for (const item of items.slice(0, 5)) {
+          const title = (item.match(/<title[^>]*>(.*?)<\/title>/)?.[1] || "")
+            .replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1")
+            .replace(/<[^>]+>/g, "")
+            .trim();
+
+          let url = "";
+          const linkMatch = item.match(/<link>(.*?)<\/link>/);
+          const linkHrefMatch = item.match(/<link[^>]+href=["'](.*?)["']/);
+          if (linkMatch?.[1]) url = linkMatch[1];
+          else if (linkHrefMatch?.[1]) url = linkHrefMatch[1];
+          const finalUrl = url.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim();
+
+          const pubDateStr =
+            item.match(/<pubDate[^>]*>(.*?)<\/pubDate>/)?.[1] || "";
+          const pubDate = pubDateStr ? new Date(pubDateStr) : new Date();
+
+          if (!title || !finalUrl) continue;
+
+          // daily_results テーブルにキーワード='技術トレンド' として保存
+          const { error: dbError } = await supabase
+            .from("daily_results")
+            .upsert(
+              {
+                title: title,
+                url: finalUrl,
+                source: "技術トレンドニュース",
+                keyword: "技術トレンド",
+                published_at: pubDate.toISOString(),
+              },
+              { onConflict: "url" }
+            );
+
+          if (!dbError) addedCount++;
+          else errors.push(`DB: ${dbError.message}`);
         }
+      } catch (fetchErr) {
+        errors.push(`${keyword}: ${fetchErr.message}`);
       }
     }
 
-    res.status(200).json({ success: true, added: addedCount });
+    res.status(200).json({
+      success: true,
+      added: addedCount,
+      errors: errors.length > 0 ? errors : undefined,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
