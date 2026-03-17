@@ -12,9 +12,9 @@ export default async function handler(req, res) {
 
     // 監視対象のRSSフィードリスト
     const feeds = [
-      { name: "厚生労働省 (新着情報)", url: "https://www.mhlw.go.jp/stf/news.xml" },
-      { name: "PMDA (新着情報)", url: "https://www.pmda.go.jp/rss/rss.xml" },
-      { name: "経済産業省 (新着情報)", url: "https://www.meti.go.jp/press/index.xml" }
+      { name: "厚生労働省 (新着情報)", url: "https://www.mhlw.go.jp/stf/news.rdf" },
+      { name: "PMDA (新着情報)", url: "https://www.pmda.go.jp/rss_015.xml" },
+      { name: "経済産業省 (新着情報)", url: "https://www.meti.go.jp/ml_index_release_atom.xml" }
     ];
 
     // 光学機器に関連するキーワード
@@ -25,19 +25,38 @@ export default async function handler(req, res) {
     for (const feed of feeds) {
       console.log(`Fetching ${feed.name}...`);
       const response = await fetch(feed.url);
+      if (!response.ok) {
+        console.error(`Failed to fetch ${feed.name}: ${response.status}`);
+        continue;
+      }
       const xmlText = await response.text();
 
-      // シンプルな正規表現によるXML/RSSパース
-      // <item> または <entry> タグを抽出
-      const items = xmlText.match(/<(item|entry)>[\s\S]*?<\/\1>/g) || [];
+      // パース処理の強化
+      // <item> や <entry> タグの後に属性（rdf:about等）がある場合にも対応
+      const items = xmlText.match(/<(item|entry)[^>]*>[\s\S]*?<\/\1>/g) || [];
 
       for (const item of items) {
-        const title = (item.match(/<title>(.*?)<\/title>/)?.[1] || "").replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1");
-        const url = (item.match(/<(link|link href=)>(.*?)<\/\1>/)?.[2] || item.match(/link="(.*?)"/)?.[1] || "").replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1");
-        // linkの形式がRSS/Atomで異なるため調整
-        const finalUrl = url.includes("href=") ? url.match(/href="(.*?)"/)?.[1] : url;
+        // titleタグに属性がある場合やCDATAにも対応
+        const title = (item.match(/<title[^>]*>(.*?)<\/title>/)?.[1] || "")
+          .replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1")
+          .replace(/<[^>]+>/g, '')
+          .trim();
+        
+        // Link extraction for RSS 1.0, 2.0 and Atom
+        let url = "";
+        const linkMatch = item.match(/<link>(.*?)<\/link>/);
+        const linkHrefMatch = item.match(/<link[^>]+href=["'](.*?)["']/);
+        
+        if (linkMatch && linkMatch[1]) {
+          url = linkMatch[1];
+        } else if (linkHrefMatch && linkHrefMatch[1]) {
+          url = linkHrefMatch[1];
+        }
+        
+        const finalUrl = url.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim();
 
-        const pubDateStr = item.match(/<(pubDate|dc:date|published|updated)>(.*?)<\/\1>/)?.[2] || "";
+        // 日付タグのバリエーションに対応
+        const pubDateStr = item.match(/<(pubDate|dc:date|published|updated)[^>]*>(.*?)<\/\1>/)?.[2] || "";
         const pubDate = pubDateStr ? new Date(pubDateStr) : new Date();
 
         // キーワードによるフィルタリング
@@ -58,14 +77,15 @@ export default async function handler(req, res) {
           // データベース保存（重複はURLで弾く）
           const { error } = await supabase.from("law_news").upsert({
             source: feed.name,
-            title: title.trim(),
-            url: finalUrl.trim(),
+            title: title,
+            url: finalUrl,
             category: category,
             importance: importance,
             published_at: pubDate.toISOString()
           }, { onConflict: 'url' });
 
           if (!error) addedCount++;
+          else console.error(`DB Error: ${error.message}`);
         }
       }
     }
