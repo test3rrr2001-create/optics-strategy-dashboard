@@ -7,26 +7,27 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // keyword が '技術トレンド' のものを抽出
+    // tech_news テーブルから取得
     const { data: techNews, error } = await supabase
-      .from("daily_results")
+      .from("tech_news")
       .select("*")
-      .eq("keyword", "技術トレンド")
       .order("published_at", { ascending: false })
       .limit(50);
 
     if (error) throw error;
 
-    // AI, AI解析, 画像処理などの頻出キーワードを簡易カウントしてタグ付けするロジック
+    // タグ集計とタグ付け
     const tagCounts = {};
-    const taggedNews = techNews.map(news => {
-      const title = news.title.toLowerCase();
+    const taggedNews = (techNews || []).map(news => {
+      const title = (news.title || "").toLowerCase();
       let tags = [];
       if (title.includes("特許")) tags.push("特許公開");
       if (title.includes("ai") || title.includes("人工知能") || title.includes("ディープラーニング")) tags.push("AI/解析");
       if (title.includes("レーザー") || title.includes("センサー") || title.includes("レンズ")) tags.push("ハードウェア");
       if (title.includes("共同研究") || title.includes("提携") || title.includes("開発")) tags.push("R&D");
-
+      if (title.includes("顕微鏡")) tags.push("顕微鏡技術");
+      if (title.includes("内視鏡")) tags.push("内視鏡技術");
+      if (title.includes("光学")) tags.push("光学技術");
       if (tags.length === 0) tags.push("新技術");
 
       tags.forEach(t => {

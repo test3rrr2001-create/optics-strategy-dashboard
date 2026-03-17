@@ -66,15 +66,15 @@ export default async function handler(req, res) {
 
           if (!title || !finalUrl) continue;
 
-          // daily_results テーブルにキーワード='技術トレンド' として保存
+          // tech_news テーブルに保存（law_news と同じ構造）
           const { error: dbError } = await supabase
-            .from("daily_results")
+            .from("tech_news")
             .upsert(
               {
+                source: "技術トレンドニュース",
                 title: title,
                 url: finalUrl,
-                source: "技術トレンドニュース",
-                keyword: "技術トレンド",
+                tags: keyword,
                 published_at: pubDate.toISOString(),
               },
               { onConflict: "url" }
