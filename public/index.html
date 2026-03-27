@@ -396,6 +396,60 @@
       border-radius: 50%; box-shadow: 0 0 8px var(--success);
     }
 
+    /* ===== PAGE CHANGE NOTIFICATION PANEL ===== */
+    .change-card {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--card-border);
+      transition: background 0.15s;
+    }
+    .change-card:last-child { border-bottom: none; }
+    .change-card.unread { background: rgba(59,130,246,0.04); }
+    .change-card:hover { background: var(--hover-bg); }
+    .change-card-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .change-card-company {
+      font-size: 13px; font-weight: 700; color: var(--text-main);
+    }
+    .change-card-label {
+      font-size: 11px; color: var(--text-muted); font-weight: 600;
+    }
+    .change-card-date {
+      font-size: 11px; color: var(--text-muted); margin-left: auto;
+    }
+    .change-card-summary {
+      font-size: 14px; color: var(--text-main); line-height: 1.6;
+    }
+    .change-card-footer { display: flex; align-items: center; gap: 10px; }
+    .imp-badge {
+      font-size: 10px; font-weight: 800; padding: 3px 9px;
+      border-radius: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .imp-High   { background: rgba(239,68,68,0.12);  color: #ef4444; }
+    .imp-Medium { background: rgba(245,158,11,0.12); color: #f59e0b; }
+    .imp-Low    { background: rgba(100,116,139,0.12);color: #64748b; }
+    .read-btn {
+      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; padding: 3px 8px; border-radius: 6px;
+      background: var(--hover-bg); border: 1px solid var(--card-border);
+      transition: all 0.15s;
+    }
+    .read-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .notif-empty {
+      padding: 24px; text-align: center; color: var(--text-muted); font-size: 14px;
+    }
+    /* Notification badge on panel title */
+    .notif-count-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 20px; height: 20px; border-radius: 10px;
+      background: var(--danger); color: #fff;
+      font-size: 11px; font-weight: 800; padding: 0 6px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      50%      { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+    }
+
     @media (max-width: 1024px) {
       .sidebar { width: 80px; }
       .nav-brand { justify-content: center; font-size: 0; }
@@ -435,6 +489,21 @@
     <div class="page-header">
       <h1>光学機器 戦略ニュース・法令監視</h1>
       <div class="sub">主要分野の市場トレンド・競合動向・規制情報を一括管理</div>
+    </div>
+
+    <!-- ===== 競合ページ変化通知パネル ===== -->
+    <div class="panel" id="page-changes-panel" style="border-color: rgba(239,68,68,0.3);">
+      <h2 class="panel-title">
+        ⚠️ 競合ページ変化通知
+        <span id="page-changes-badge" class="panel-badge" style="display:none"></span>
+      </h2>
+      <div id="page-changes-list">
+        <div class="notif-empty">読み込み中...</div>
+      </div>
+      <div style="padding:12px 20px; border-top:1px solid var(--card-border); text-align:right;">
+        <button class="btn btn-secondary" id="show-all-changes-btn" style="font-size:12px; padding:6px 14px;"
+          onclick="loadPageChanges(false)">過去30件を表示</button>
+      </div>
     </div>
 
     <!-- サマリーカード（分野ショートカット） -->
@@ -1316,11 +1385,96 @@
     }
   }
 
+  // ===== 競合ページ変化通知 =====
+  async function loadPageChanges(unreadOnly = true) {
+    const listEl = document.getElementById("page-changes-list");
+    const badgeEl = document.getElementById("page-changes-badge");
+    const url = unreadOnly
+      ? "/api/dashboard/page-changes?unread=true"
+      : "/api/dashboard/page-changes";
+
+    try {
+      const res = await fetch(url);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "page-changes load failed");
+
+      const changes = json.changes || [];
+      const unreadCount = json.unread_count || 0;
+
+      // バッジ更新
+      if (unreadCount > 0) {
+        badgeEl.textContent = `未読 ${unreadCount}件`;
+        badgeEl.className = "notif-count-badge";
+        badgeEl.style.display = "inline-flex";
+      } else {
+        badgeEl.textContent = "変化なし";
+        badgeEl.className = "panel-badge";
+        badgeEl.style.display = "inline-flex";
+      }
+
+      if (!changes.length) {
+        listEl.innerHTML = `<div class="notif-empty">${
+          unreadOnly ? "新しい競合ページの変化はありません。" : "変化履歴はまだありません。"
+        }</div>`;
+        return;
+      }
+
+      listEl.innerHTML = changes.map(c => {
+        const pg = c.monitored_pages || {};
+        const impClass = `imp-${c.importance}`;
+        const dateStr = c.detected_at
+          ? new Date(c.detected_at).toLocaleDateString("ja-JP", { month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" })
+          : "-";
+        return `
+          <div class="change-card ${c.is_read ? "" : "unread"}" id="change-${c.id}">
+            <div class="change-card-header">
+              <span class="change-card-company">${escapeHtml(pg.competitor_name || "不明")}</span>
+              <span class="change-card-label">${escapeHtml(pg.page_label || pg.url || "")}</span>
+              <span class="change-card-date">${dateStr}</span>
+            </div>
+            <div class="change-card-summary">${escapeHtml(c.summary || "（要約なし）")}</div>
+            <div class="change-card-footer">
+              <span class="imp-badge ${impClass}">${c.importance}</span>
+              ${pg.url ? `<a href="${escapeHtml(pg.url)}" target="_blank" rel="noopener" style="font-size:12px;">ページを開く →</a>` : ""}
+              ${!c.is_read ? `<button class="read-btn" onclick="markAsRead('${c.id}')">既読にする</button>` : ""}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+    } catch (e) {
+      console.error(e);
+      listEl.innerHTML = `<div class="notif-empty" style="color:var(--danger);">読み込みエラー: ${e.message}</div>`;
+    }
+  }
+
+  // 既読マーク処理
+  async function markAsRead(id) {
+    try {
+      await fetch("/api/dashboard/page-changes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      // カードのunreadクラスを外しボタンを削除（再fetch不要）
+      const card = document.getElementById(`change-${id}`);
+      if (card) {
+        card.classList.remove("unread");
+        card.querySelector(".read-btn")?.remove();
+      }
+      // バッジカウントを再取得
+      loadPageChanges(true);
+    } catch (e) {
+      console.error("markAsRead error:", e);
+    }
+  }
+
   load();
   loadTrends();
   loadLawNews();
   loadCompetitorData();
   loadTechTrends();
+  loadPageChanges(true); // 未読のみ表示（デフォルト）
   loadAISummary(); // Home用
 
   // 分野別のAIサマリーはページ生成後に呼ぶ
