@@ -54,7 +54,7 @@
         --white: #1e293b;
         --accent-soft: rgba(59, 130, 246, 0.15);
         --sidebar-bg: rgba(15, 23, 42, 0.95);
-        --shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         --hover-bg: rgba(51, 65, 85, 0.6);
       }
     }
@@ -176,9 +176,8 @@
     
     .panel { padding: 28px; margin-bottom: 24px; }
     
-    .card { padding: 24px; cursor: default; }
     .card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-4px) scale(1.02);
       box-shadow: var(--shadow);
       border-color: rgba(59, 130, 246, 0.4);
     }
@@ -252,18 +251,29 @@
     /* ===== STRATEGY BOX (AI Insights) ===== */
     .strategy-box {
       padding: 24px;
-      background: linear-gradient(135deg, var(--accent-glow) 0%, transparent 100%);
+      background: linear-gradient(135deg, var(--accent-glow) 0%, rgba(255,255,255,0.4) 100%);
       border: 1px solid rgba(59, 130, 246, 0.3);
       position: relative;
       overflow: hidden;
+      box-shadow: inset 0 0 20px rgba(255,255,255,0.5);
     }
     @media (prefers-color-scheme: dark) {
-      .strategy-box { background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(30, 41, 59, 0.8) 100%); }
+      .strategy-box { 
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(30, 41, 59, 0.8) 100%);
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+      }
     }
     .strategy-box::before {
-      content: '✨'; position: absolute; top: -10px; right: -10px;
-      font-size: 64px; opacity: 0.05; pointer-events: none;
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
+      animation: rotateGlow 15s linear infinite; pointer-events: none;
     }
+    @keyframes rotateGlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .insight-placeholder {
+      animation: pulseAnim 1.5s infinite ease-in-out;
+      color: var(--text-muted); font-weight: 600; text-align: center;
+    }
+    @keyframes pulseAnim { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     .strategy-label {
       font-size: 12px; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.08em; color: var(--accent); margin-bottom: 12px;
@@ -450,6 +460,66 @@
       50%      { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
     }
 
+
+    /* ===== 4分野AIインサイトグリッド (Home) ===== */
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 0;
+    }
+    .insight-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all 0.25s ease;
+      display: flex; flex-direction: column; gap: 10px;
+      position: relative; overflow: hidden;
+    }
+    .insight-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      border-radius: 16px 16px 0 0;
+    }
+    .insight-card.ic-microscope::before  { background: #3b82f6; }
+    .insight-card.ic-industrial::before  { background: #f97316; }
+    .insight-card.ic-pipe::before        { background: #10b981; }
+    .insight-card.ic-beauty::before      { background: #d946ef; }
+    .insight-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+    @media (prefers-color-scheme: dark) {
+      .insight-card:hover { box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3); }
+    }
+    .insight-card-header { display: flex; align-items: center; gap: 8px; }
+    .insight-card-emoji { font-size: 20px; }
+    .insight-card-label { font-size: 13px; font-weight: 800; color: var(--text-main); }
+    .insight-card-badge {
+      margin-left: auto; font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 8px;
+      background: var(--accent-soft); color: var(--accent);
+    }
+    .insight-card-text { font-size: 12px; color: var(--text-muted); line-height: 1.65; flex: 1; }
+    .insight-card-cta {
+      font-size: 11px; font-weight: 700; color: var(--accent);
+      display: flex; align-items: center; gap: 4px; margin-top: 4px;
+    }
+    /* Collapsible data section divider */
+    .data-section-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 0 8px; cursor: pointer; user-select: none;
+      color: var(--text-muted); font-size: 13px; font-weight: 600;
+    }
+    .data-section-header::before, .data-section-header::after {
+      content: ''; display: block; flex: 1;
+      height: 1px; background: var(--card-border);
+    }
+
     @media (max-width: 1024px) {
       .sidebar { width: 80px; }
       .nav-brand { justify-content: center; font-size: 0; }
@@ -459,10 +529,13 @@
       .main-wrap { margin-left: 80px; padding: 24px; }
       .split, .charts, .section-grid-2 { grid-template-columns: 1fr; }
       .summary-cards { grid-template-columns: 1fr 1fr; }
+      .insight-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 640px) {
       .summary-cards { grid-template-columns: 1fr; }
+      .insight-grid { grid-template-columns: 1fr 1fr; }
     }
+
   </style>
 </head>
 <body>
@@ -506,48 +579,48 @@
       </div>
     </div>
 
-    <!-- サマリーカード（分野ショートカット） -->
-    <div class="summary-cards" id="home-summary-cards">
-      <div class="summary-card" onclick="switchTab('microscope')">
-        <div class="sc-label">顕微鏡</div>
-        <div class="sc-num" id="home-cnt-microscope">–</div>
-        <div class="sc-caption">件のニュース</div>
-      </div>
-      <div class="summary-card" onclick="switchTab('industrial_endoscope')">
-        <div class="sc-label">工業用内視鏡</div>
-        <div class="sc-num" id="home-cnt-industrial_endoscope">–</div>
-        <div class="sc-caption">件のニュース</div>
-      </div>
-      <div class="summary-card" onclick="switchTab('pipe_camera')">
-        <div class="sc-label">管内カメラ</div>
-        <div class="sc-num" id="home-cnt-pipe_camera">–</div>
-        <div class="sc-caption">件のニュース</div>
-      </div>
-      <div class="summary-card" onclick="switchTab('beauty')">
-        <div class="sc-label">美容用</div>
-        <div class="sc-num" id="home-cnt-beauty">–</div>
-        <div class="sc-caption">件のニュース</div>
-      </div>
-    </div>
-
-    <!-- AI戦略サマリー -->
+    <!-- ===== 4分野 AI戦略インサイトグリッド ===== -->
     <div class="panel">
-      <h2 class="panel-title">AI戦略サマリー <span class="panel-badge" id="ai-summary-badge">分析中...</span></h2>
-      <div id="home-ai-summary" class="strategy-box" style="background:#fff; border-color:var(--card-border);">
-        <div class="insight-placeholder" id="home-ai-loading">
-          <div style="font-size:24px; margin-bottom:12px;">⚙️</div>
-          <strong>AI戦略分析機能：メンテナンス中</strong><br>
-          現在、分析エンジンのアップグレードを行っております。再開までしばらくお待ちください。
+      <h2 class="panel-title">4分野 AI戦略サマリー <span class="panel-badge" id="home-ai-grid-badge">AI自動生成</span></h2>
+      <div class="insight-grid">
+        <div class="insight-card ic-microscope" onclick="switchTab('microscope')">
+          <div class="insight-card-header">
+            <span class="insight-card-emoji">🔬</span>
+            <span class="insight-card-label">顕微鏡</span>
+            <span class="insight-card-badge" id="home-cnt-microscope">–</span>
+          </div>
+          <div class="insight-card-text" id="home-ai-grid-microscope"><span class="insight-placeholder">分析中...</span></div>
+          <div class="insight-card-cta">詳細を見る →</div>
         </div>
-        <div id="home-ai-content" style="display:none">
-          <p id="home-ai-text" style="font-weight:700; color:var(--text-main); margin-bottom:16px; font-size:16px;"></p>
-          <div style="font-size:11px; font-weight:700; color:var(--accent); margin-bottom:8px;">📌 注目シグナル</div>
-          <ul id="home-ai-signals" style="font-size:13px; color:var(--text-muted); padding-left:20px; margin-bottom:16px;"></ul>
+        <div class="insight-card ic-industrial" onclick="switchTab('industrial_endoscope')">
+          <div class="insight-card-header">
+            <span class="insight-card-emoji">🔍</span>
+            <span class="insight-card-label">工業用内視鏡</span>
+            <span class="insight-card-badge" id="home-cnt-industrial_endoscope">–</span>
+          </div>
+          <div class="insight-card-text" id="home-ai-grid-industrial_endoscope"><span class="insight-placeholder">分析中...</span></div>
+          <div class="insight-card-cta">詳細を見る →</div>
+        </div>
+        <div class="insight-card ic-pipe" onclick="switchTab('pipe_camera')">
+          <div class="insight-card-header">
+            <span class="insight-card-emoji">📷</span>
+            <span class="insight-card-label">管内カメラ</span>
+            <span class="insight-card-badge" id="home-cnt-pipe_camera">–</span>
+          </div>
+          <div class="insight-card-text" id="home-ai-grid-pipe_camera"><span class="insight-placeholder">分析中...</span></div>
+          <div class="insight-card-cta">詳細を見る →</div>
+        </div>
+        <div class="insight-card ic-beauty" onclick="switchTab('beauty')">
+          <div class="insight-card-header">
+            <span class="insight-card-emoji">✨</span>
+            <span class="insight-card-label">美容用</span>
+            <span class="insight-card-badge" id="home-cnt-beauty">–</span>
+          </div>
+          <div class="insight-card-text" id="home-ai-grid-beauty"><span class="insight-placeholder">分析中...</span></div>
+          <div class="insight-card-cta">詳細を見る →</div>
         </div>
       </div>
     </div>
-
-    <section class="cards" id="cards"></section>
 
     <!-- 急上昇検索ワード (Home) -->
     <div class="panel">
@@ -583,49 +656,53 @@
       </div>
     </section>
 
-    <section class="split">
-      <div class="panel">
-        <h2 class="panel-title">分野別の収集状況</h2>
-        <div class="list" id="projectCounts"></div>
-      </div>
-      <div class="panel">
-        <h2 class="panel-title">配信元別の内訳</h2>
-        <div class="list" id="sourceCounts"></div>
-      </div>
-    </section>
+    <!-- データ詳細（折りたたみ：最下部） -->
+    <div class="data-section-header" onclick="
+      var s = document.getElementById('home-data-section');
+      var isOpen = s.style.display !== 'none';
+      s.style.display = isOpen ? 'none' : 'block';
+      this.textContent = isOpen ? 'データ詳細（グラフ・収集状況・記事一覧）を見る ▼' : 'データ詳細を閉じる ▲';
+    ">データ詳細（グラフ・収集状況・記事一覧）を見る ▼</div>
+    <div id="home-data-section" style="display:none">
+      <section class="split">
+        <div class="panel">
+          <h2 class="panel-title">分野別の収集状況</h2>
+          <div class="list" id="projectCounts"></div>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">配信元別の内訳</h2>
+          <div class="list" id="sourceCounts"></div>
+        </div>
+      </section>
 
-    <section class="charts">
-      <div class="panel">
-        <h2 class="panel-title">分野別構成比</h2>
-        <div class="chart-wrap"><canvas id="projectPie"></canvas></div>
-      </div>
-      <div class="panel">
-        <h2 class="panel-title">配信元別構成比</h2>
-        <div class="chart-wrap"><canvas id="sourcePie"></canvas></div>
-      </div>
-      <div class="panel trend-full">
-        <h2 class="panel-title">日次の収集件数推移</h2>
-        <div class="chart-wrap" style="height: 300px;"><canvas id="trendLine"></canvas></div>
-      </div>
-    </section>
+      <section class="charts">
+        <div class="panel">
+          <h2 class="panel-title">分野別構成比</h2>
+          <div class="chart-wrap"><canvas id="projectPie"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">配信元別構成比</h2>
+          <div class="chart-wrap"><canvas id="sourcePie"></canvas></div>
+        </div>
+        <div class="panel trend-full">
+          <h2 class="panel-title">日次の収集件数推移</h2>
+          <div class="chart-wrap" style="height: 300px;"><canvas id="trendLine"></canvas></div>
+        </div>
+      </section>
 
-    <div class="status" id="status"></div>
-    <div class="table-container">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>取得日時</th>
-              <th>分野</th>
-              <th>検索ワード</th>
-              <th>記事タイトル</th>
-              <th>配信元</th>
-              <th>発行日</th>
-              <th>詳細</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
+      <div class="status" id="status"></div>
+      <div class="table-container">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>取得日時</th><th>分野</th><th>検索ワード</th>
+                <th>記事タイトル</th><th>配信元</th><th>発行日</th><th>詳細</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -742,7 +819,7 @@
     t.addEventListener("click", () => switchTab(t.dataset.tab));
   });
 
-  // ===== 各分野ページ生成 =====
+  // ===== 各分野ページ生成 (insight-first) =====
   function buildProjectPage(key) {
     const info = PROJECT_INFO[key];
     const el = document.getElementById("page-" + key);
@@ -752,20 +829,10 @@
           <h1>${info.emoji} ${info.label}</h1>
           <div class="sub">${info.desc}</div>
         </div>
-        <div class="section-grid-2">
-          <div class="panel">
-            <h2 class="panel-title">分野サマリー</h2>
-            <div class="cards" style="margin-bottom:0" id="${key}-cards"></div>
-          </div>
-          <div class="panel">
-            <h2 class="panel-title">頻出ワードランキング
-              <span class="panel-badge">ニュースタイトルから自動集計</span>
-            </h2>
-            <div class="word-rank" id="${key}-words">読み込み中...</div>
-          </div>
-        </div>
+
+        <!-- AI戦略サマリー（最上部に昇格） -->
         <div class="panel">
-          <h2 class="panel-title">今後の戦略提案 <span class="panel-badge" id="${key}-ai-badge">AI自動生成</span></h2>
+          <h2 class="panel-title">🧠 AI戦略サマリー・打ち手提案 <span class="panel-badge" id="${key}-ai-badge">AI自動生成</span></h2>
           <div class="strategy-box" id="${key}-strategy-box">
             <div id="${key}-ai-loading" class="insight-placeholder" style="padding:10px; border:none; background:transparent;">分析中...</div>
             <div id="${key}-ai-content" style="display:none">
@@ -775,30 +842,62 @@
             </div>
           </div>
         </div>
+
+        <!-- 急上昇検索ワード -->
         <div class="panel">
           <h2 class="panel-title">急上昇検索ワード <span class="panel-badge" id="${key}-trends-badge">分析中...</span></h2>
           <div class="word-rank" id="${key}-trends">読み込み中...</div>
         </div>
-        <div class="status" id="${key}-status"></div>
-        <div class="table-container">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>取得日時</th>
-                  <th>検索ワード</th>
-                  <th>記事タイトル</th>
-                  <th>配信元</th>
-                  <th>発行日</th>
-                  <th>詳細</th>
-                </tr>
-              </thead>
-              <tbody id="${key}-rows"></tbody>
-            </table>
+
+        <!-- 頻出ワードランキング -->
+        <div class="panel">
+          <h2 class="panel-title">頻出ワードランキング
+            <span class="panel-badge">ニュースタイトルから自動集計</span>
+          </h2>
+          <div class="word-rank" id="${key}-words">読み込み中...</div>
+        </div>
+
+        <!-- データ詳細（最下部・折りたたみ） -->
+        <div class="data-section-header" onclick="
+          var s = this.nextElementSibling;
+          var isOpen = s.style.display !== 'none';
+          s.style.display = isOpen ? 'none' : 'block';
+          this.textContent = isOpen ? 'データ詳細（収集件数・記事一覧）を見る ▼' : 'データ詳細を閉じる ▲';
+        ">データ詳細（収集件数・記事一覧）を見る ▼</div>
+        <div style="display:none">
+          <div class="status" id="${key}-status"></div>
+          <div class="table-container">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>取得日時</th><th>検索ワード</th>
+                    <th>記事タイトル</th><th>配信元</th><th>発行日</th><th>詳細</th>
+                  </tr>
+                </thead>
+                <tbody id="${key}-rows"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     `;
+  }
+
+  // ===== Home: インサイトグリッドにSTRATEGY_NOTESを反映 =====
+  function renderHomeInsightGrid(counts) {
+    Object.keys(PROJECT_INFO).forEach(key => {
+      // ニュース件数をバッジに
+      const cntEl = document.getElementById("home-cnt-" + key);
+      if (cntEl && counts && counts[key] != null) {
+        cntEl.textContent = counts[key] + "件";
+      }
+      // 戦略テキストをカードに
+      const textEl = document.getElementById("home-ai-grid-" + key);
+      if (textEl && STRATEGY_NOTES[key]) {
+        textEl.textContent = STRATEGY_NOTES[key];
+      }
+    });
   }
 
   // ===== 頻出ワードランキング表示 =====
@@ -1155,6 +1254,9 @@
       renderLine(json.chart?.day||[]);
       renderRows(json.items||[]);
       statusEl.textContent=`${json.items?.length||0} 件の結果が見つかりました`;
+
+      // Homeインサイトグリッドの更新 (データ件数を反映)
+      renderHomeInsightGrid(json.counts || {});
 
       // 分野ページのデータ更新
       const wordFreq = json.wordFrequency || {};
