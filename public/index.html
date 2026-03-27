@@ -900,8 +900,8 @@
     Object.keys(PROJECT_INFO).forEach(key => {
       // ニュース件数をバッジに
       const cntEl = document.getElementById("home-cnt-" + key);
-      if (cntEl && counts && counts[key] != null) {
-        cntEl.textContent = counts[key] + "件";
+      if (cntEl) {
+        cntEl.textContent = (counts[key] || 0) + "件";
       }
       // 戦略テキストをカードに
       const textEl = document.getElementById("home-ai-grid-" + key);
