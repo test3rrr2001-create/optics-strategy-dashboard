@@ -427,9 +427,36 @@
       font-size: 11px; color: var(--text-muted); margin-left: auto;
     }
     .change-card-summary {
-      font-size: 14px; color: var(--text-main); line-height: 1.6;
+      font-size: 14px; color: var(--text-main); line-height: 1.6; margin: 4px 0;
     }
-    .change-card-footer { display: flex; align-items: center; gap: 10px; }
+    
+    /* 鬼の戦略: 攻撃的なアラートビジュアル */
+    .change-card.critical-alert {
+      background: rgba(239, 68, 68, 0.05);
+      border-left: 4px solid var(--danger);
+      animation: flashBg 3s infinite alternate;
+    }
+    .change-card.critical-alert .change-card-company {
+      color: var(--danger); font-size: 15px; font-weight: 800;
+    }
+    @keyframes flashBg {
+      0% { background: rgba(239, 68, 68, 0.02); }
+      100% { background: rgba(239, 68, 68, 0.08); box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.1); }
+    }
+    
+    /* 鬼の戦略: AIテキストの装飾バッジ */
+    .summary-impact-badge {
+      display: inline-block; background: rgba(239,68,68,0.15); color: #ef4444;
+      font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+      margin-right: 6px; margin-bottom: 4px; vertical-align: middle;
+    }
+    .summary-action-badge {
+      display: inline-block; background: rgba(59,130,246,0.15); color: #3b82f6;
+      font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+      margin-right: 6px; margin-top: 6px; margin-bottom: 2px; vertical-align: middle;
+    }
+
+    .change-card-footer { display: flex; align-items: center; gap: 10px; margin-top: 4px;}
     .imp-badge {
       font-size: 10px; font-weight: 800; padding: 3px 9px;
       border-radius: 10px; text-transform: uppercase; letter-spacing: 0.05em;
@@ -719,28 +746,12 @@
   <div class="container">
     <div class="page-header">
       <h1>⚖️ 法令監視</h1>
-      <div class="sub">光学・医療機器に関連する省庁の最新公示・規制ニュースを自動収集しています。</div>
+      <div class="sub">光学・医療機器に関連する省庁の最新公示・規制ニュースをカテゴリ別に自動収集しています。</div>
     </div>
     
-    <div class="panel">
-      <h2 class="panel-title">法令・公示ニュース <span class="panel-badge" id="law-status-badge">最新50件</span></h2>
-      <div class="table-container">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:120px">公示日</th>
-                <th style="width:140px">発信元</th>
-                <th style="width:100px">カテゴリ</th>
-                <th>タイトル</th>
-                <th style="width:80px">重要度</th>
-                <th style="width:60px">詳細</th>
-              </tr>
-            </thead>
-            <tbody id="law-rows"></tbody>
-          </table>
-        </div>
-      </div>
+    <!-- 鬼の戦略: 法令ニュースはカテゴリ（分野）ごとに分割表示する -->
+    <div id="law-category-containers">
+      <div style="text-align:center; padding:40px; color:var(--text-muted);">読み込み中...</div>
     </div>
   </div>
 </div>
@@ -1337,35 +1348,79 @@
     }
   }
 
-  // ===== 法令ニュース読み込み =====
+  // ===== 法令ニュース読み込み (カテゴリ別分割) =====
   async function loadLawNews() {
-    const tbody = document.getElementById("law-rows");
-    if (!tbody) return;
+    const container = document.getElementById("law-category-containers");
+    if (!container) return;
     try {
       const res = await fetch("/api/dashboard/law-results");
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Law load failed");
 
-      tbody.innerHTML = (json || []).map(item => {
-        const impColor = item.importance === "High" ? "var(--danger)" : (item.importance === "Medium" ? "var(--warning)" : "var(--success)");
-        return `
-          <tr>
-            <td style="white-space:nowrap">${new Date(item.published_at).toLocaleDateString("ja-JP")}</td>
-            <td><span class="source-tag">${escapeHtml(item.source)}</span></td>
-            <td><span class="project-tag ${getProjectClass(item.category)}">${escapeHtml(item.category)}</span></td>
-            <td style="font-weight:600">${escapeHtml(item.title)}</td>
-            <td><span style="color:${impColor}; font-weight:800; font-size:11px;">● ${item.importance}</span></td>
-            <td><a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">表示</a></td>
-          </tr>
-        `;
-      }).join("");
-
-      if (!json.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-muted);">現在、光学機器に関連する新しい公示情報はありません。</td></tr>';
+      if (!json || !json.length) {
+        container.innerHTML = '<div class="panel"><div style="text-align:center; padding:40px; color:var(--text-muted);">現在、新しい公示情報はありません。</div></div>';
+        return;
       }
+
+      // カテゴリごとにグループ化
+      const grouped = {};
+      json.forEach(item => {
+        const cat = item.category || "その他";
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(item);
+      });
+
+      // HTML生成
+      let html = "";
+      for (const cat of Object.keys(grouped)) {
+        const items = grouped[cat];
+        const categoryClass = getProjectClass(cat);
+        const emoji = PROJECT_INFO[Object.keys(PROJECT_INFO).find(k => PROJECT_INFO[k].label === cat)]?.emoji || "⚖️";
+
+        let rowsHtml = items.map(item => {
+          const impColor = item.importance === "High" ? "var(--danger)" : (item.importance === "Medium" ? "var(--warning)" : "var(--success)");
+          return `
+            <tr>
+              <td style="white-space:nowrap">${new Date(item.published_at).toLocaleDateString("ja-JP")}</td>
+              <td><span class="source-tag">${escapeHtml(item.source)}</span></td>
+              <td style="font-weight:600">${escapeHtml(item.title)}</td>
+              <td><span style="color:${impColor}; font-weight:800; font-size:11px;">● ${item.importance}</span></td>
+              <td><a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">表示</a></td>
+            </tr>
+          `;
+        }).join("");
+
+        html += `
+          <div class="panel" style="border-left: 4px solid var(--accent); margin-bottom: 32px;">
+            <h2 class="panel-title" style="margin-bottom: 16px;">
+              ${emoji} ${escapeHtml(cat)} 関連法規・規制
+              <span class="panel-badge">${items.length}件</span>
+            </h2>
+            <div class="table-container">
+              <div class="table-wrap" style="max-height: 400px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:120px">公示日</th>
+                      <th style="width:140px">発信元</th>
+                      <th>タイトル</th>
+                      <th style="width:80px">重要度</th>
+                      <th style="width:60px">詳細</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rowsHtml}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      container.innerHTML = html;
+
     } catch (e) {
       console.error(e);
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger);">読み込みエラー: ${e.message}</td></tr>`;
+      container.innerHTML = `<div class="panel"><div style="text-align:center; color:var(--danger);">読み込みエラー: ${e.message}</div></div>`;
     }
   }
 
@@ -1523,18 +1578,30 @@
 
       listEl.innerHTML = changes.map(c => {
         const pg = c.monitored_pages || {};
+        const isHigh = c.importance === "High";
         const impClass = `imp-${c.importance}`;
+        const alertClass = (isHigh && !c.is_read) ? "critical-alert" : "";
         const dateStr = c.detected_at
           ? new Date(c.detected_at).toLocaleDateString("ja-JP", { month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" })
           : "-";
+          
+        // 鬼の戦略: サマリー文の [影響] [打ち手] をリッチなバッジに置換
+        let formattedSummary = escapeHtml(c.summary || "（要約なし）");
+        formattedSummary = formattedSummary
+          .replace(/\[影響\]/g, '<br><span class="summary-impact-badge">⚠️自社への影響</span>')
+          .replace(/\[打ち手\]/g, '<br><span class="summary-action-badge">🔥推奨アクション</span>');
+        
+        // 先頭の余分な改行を削除
+        if (formattedSummary.startsWith("<br>")) formattedSummary = formattedSummary.slice(4);
+
         return `
-          <div class="change-card ${c.is_read ? "" : "unread"}" id="change-${c.id}">
+          <div class="change-card ${c.is_read ? "" : "unread"} ${alertClass}" id="change-${c.id}">
             <div class="change-card-header">
-              <span class="change-card-company">${escapeHtml(pg.competitor_name || "不明")}</span>
+              <span class="change-card-company">${isHigh ? "🚨 " : ""}${escapeHtml(pg.competitor_name || "不明")}</span>
               <span class="change-card-label">${escapeHtml(pg.page_label || pg.url || "")}</span>
               <span class="change-card-date">${dateStr}</span>
             </div>
-            <div class="change-card-summary">${escapeHtml(c.summary || "（要約なし）")}</div>
+            <div class="change-card-summary">${formattedSummary}</div>
             <div class="change-card-footer">
               <span class="imp-badge ${impClass}">${c.importance}</span>
               ${pg.url ? `<a href="${escapeHtml(pg.url)}" target="_blank" rel="noopener" style="font-size:12px;">ページを開く →</a>` : ""}
