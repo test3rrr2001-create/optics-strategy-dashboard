@@ -1,6 +1,10 @@
 -- =====================================================
 -- 競合ページ監視機能: Supabaseテーブル作成スクリプト
 -- Supabase Dashboard > SQL Editor に貼り付けて実行してください
+--
+-- ※ すでにテーブルがある場合は、以下の ALTER 文だけを実行して
+-- last_content カラムを追加してください。
+-- ALTER TABLE monitored_pages ADD COLUMN IF NOT EXISTS last_content TEXT;
 -- =====================================================
 
 -- ① 監視対象URLリスト
@@ -12,7 +16,8 @@ CREATE TABLE IF NOT EXISTS monitored_pages (
   page_label    TEXT,                      -- 例: '価格ページ', '新製品情報', '採用ページ'
   url           TEXT NOT NULL UNIQUE,      -- 監視対象URL
   active        BOOLEAN NOT NULL DEFAULT TRUE,
-  last_content_hash TEXT,                  -- 前回取得テキストのハッシュ（差分検知用）
+  last_content_hash TEXT,                  -- 前回取得テキストのハッシュ（軽量な差分有無チェック用）
+  last_content  TEXT,                      -- 前回取得したフルテキスト（詳細な差分抽出用）
   last_scraped_at TIMESTAMPTZ,
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );

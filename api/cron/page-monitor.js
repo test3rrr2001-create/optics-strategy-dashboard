@@ -168,11 +168,8 @@ export default async function handler(req, res) {
       results.changed++;
 
       // 差分テキストを生成（前回テキストがない場合は最初のスナップショット）
-      const rawDiff = page.last_content_hash
-        ? extractDiff(
-            page.last_content_hash, // ※本来は前回テキストをDBに保存する必要があるが、まず実装を簡略化
-            text
-          )
+      const rawDiff = page.last_content
+        ? extractDiff(page.last_content, text)
         : text.slice(0, 1000) + "（初回スナップショット）";
 
       // AIで要約・重要度判定
@@ -190,11 +187,12 @@ export default async function handler(req, res) {
         raw_diff: rawDiff.slice(0, 5000), // 最大5000文字保存
       });
 
-      // monitored_pages のハッシュを更新
+      // monitored_pages のハッシュとテキストを更新
       await supabase
         .from("monitored_pages")
         .update({
           last_content_hash: currentHash,
+          last_content: text,
           last_scraped_at: new Date().toISOString(),
         })
         .eq("id", page.id);
