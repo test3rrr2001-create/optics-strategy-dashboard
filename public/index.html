@@ -285,6 +285,45 @@
       display: flex; align-items: center; gap: 6px;
     }
 
+    /* ===== DAILY AI ANALYSIS CARDS ===== */
+    .daily-card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 20px; margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .daily-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .daily-title { font-size: 16px; font-weight: 800; color: var(--text-main); }
+    .daily-badge { 
+      font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; 
+      background: var(--hover-bg); color: var(--text-muted); text-transform: uppercase;
+    }
+    .daily-badge.high { background: rgba(239,68,68,0.1); color: var(--danger); }
+    .daily-issue {
+      font-size: 15px; font-weight: 700; color: var(--text-main);
+      padding-bottom: 12px; border-bottom: 1px solid var(--card-border); margin-bottom: 16px;
+    }
+    .daily-section-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 8px; margin-top: 16px; }
+    .daily-hypo-box {
+      background: var(--hover-bg); border-radius: 8px; padding: 12px; margin-bottom: 8px;
+    }
+    .daily-hypo-title { font-size: 13px; font-weight: 700; display:flex; justify-content:space-between; margin-bottom:4px; }
+    .daily-hypo-desc { font-size: 13px; color: var(--text-muted); line-height:1.5; }
+    .daily-risk { font-size: 13px; font-weight: 600; color: var(--danger); background: rgba(239,68,68,0.05); padding: 10px; border-radius: 6px; border-left: 3px solid var(--danger); }
+    .daily-action-box { display: flex; flex-direction: column; gap: 8px; }
+    .daily-action-item { font-size: 13px; background: rgba(59,130,246,0.05); padding: 10px; border-radius: 6px; border-left: 3px solid var(--accent); }
+    .daily-action-title { font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+    .daily-action-meta { font-size: 11px; color: var(--text-muted); display:flex; gap:10px; }
+    
+    details.daily-details { margin-top: 16px; border-top: 1px solid var(--card-border); padding-top: 12px; }
+    details.daily-details summary { 
+      font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none;
+    }
+    details.daily-details summary:hover { color: var(--accent); }
+    .daily-details-content { margin-top: 12px; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .daily-details-content h5 { margin: 12px 0 4px; font-size: 12px; color: var(--text-main); }
+    .daily-details-content ul { margin: 0; padding-left: 16px; }
+
+
     /* ===== FILTERS ===== */
     .filters {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -854,6 +893,12 @@
           </div>
         </div>
 
+        <!-- 🧠 プロアクティブ戦略分析（日次） -->
+        <div class="panel" id="${key}-daily-analysis-panel" style="display:none; border-color: rgba(59, 130, 246, 0.4);">
+          <h2 class="panel-title">🧠 プロアクティブ戦略分析（日次）</h2>
+          <div id="${key}-daily-analysis-content"></div>
+        </div>
+
         <!-- 急上昇検索ワード -->
         <div class="panel">
           <h2 class="panel-title">急上昇検索ワード <span class="panel-badge" id="${key}-trends-badge">分析中...</span></h2>
@@ -1333,13 +1378,86 @@
       }
 
       if (isHome) {
-        document.getElementById("home-ai-text").textContent = json.summary || "分析中...";
+        const homeAiText = document.getElementById("home-ai-text");
+        if (homeAiText) homeAiText.textContent = json.summary || "分析中...";
         const signalsEl = document.getElementById("home-ai-signals");
-        signalsEl.innerHTML = (json.signals || []).map(s => `<li>${escapeHtml(s)}</li>`).join("");
+        if (signalsEl) signalsEl.innerHTML = (json.signals || []).map(s => `<li>${escapeHtml(s)}</li>`).join("");
       } else {
         const actionsEl = document.getElementById(project + "-ai-actions");
         if (actionsEl) {
           actionsEl.innerHTML = (json.actions || []).map(a => `<li>${escapeHtml(a)}</li>`).join("");
+        }
+
+        // --- Render Daily Analysis (Topics) ---
+        const dailyPanel = document.getElementById(project + "-daily-analysis-panel");
+        const dailyContent = document.getElementById(project + "-daily-analysis-content");
+        
+        if (dailyPanel && dailyContent && json.topics && json.topics.length > 0) {
+          dailyPanel.style.display = "block";
+          
+          let html = "";
+          json.topics.forEach(t => {
+            const urgencyClass = (t.importance === 'High' || t.importance === '高') ? 'high' : '';
+            const hyposHtml = (t.hypotheses || []).map(h => `
+              <div class="daily-hypo-box">
+                <div class="daily-hypo-title"><span>💡 ${escapeHtml(h.title)}</span> <span>確度: ${escapeHtml(h.confidence_level)}</span></div>
+                <div class="daily-hypo-desc">${escapeHtml(h.description)}</div>
+                <details style="margin-top:6px;font-size:12px;color:var(--text-muted)"><summary>根拠と補足</summary>
+                  <p style="margin:4px 0"><strong>根拠:</strong> ${escapeHtml(h.supporting_evidence)}</p>
+                  <p style="margin:2px 0"><strong>不足情報:</strong> ${escapeHtml(h.missing_information)}</p>
+                </details>
+              </div>
+            `).join("");
+
+            const actionsHtml = (t.recommended_actions || []).map(a => `
+              <div class="daily-action-item">
+                <div class="daily-action-title">🔥 ${escapeHtml(a.action)}</div>
+                <div class="daily-action-meta"><span>優先度: ${escapeHtml(a.urgency)}</span><span>担当: ${escapeHtml(a.owner_suggestion)}</span></div>
+                <div style="font-size:12px; margin-top:4px; color:var(--text-muted)">${escapeHtml(a.reason)}</div>
+              </div>
+            `).join("");
+            
+            const sysImpactHtml = (t.system_impact || []).map(si => `<li>${escapeHtml(si)}</li>`).join("");
+
+            html += `
+              <div class="daily-card">
+                <div class="daily-card-header">
+                  <span class="daily-badge ${urgencyClass}">${escapeHtml(t.topic_type)}</span>
+                  <span class="daily-badge ${urgencyClass}">重要度: ${escapeHtml(t.importance)}</span>
+                  <span class="daily-title">${escapeHtml(t.topic_title)}</span>
+                </div>
+                <div class="daily-issue">🎯 主要論点: ${escapeHtml(t.main_issue)}</div>
+                
+                <div class="daily-section-title">有力仮説</div>
+                ${hyposHtml}
+                
+                <div class="daily-section-title">見落としリスク（インバージョン）</div>
+                <div class="daily-risk">⚠️ ${escapeHtml(t.inversion_risk)}</div>
+                
+                <div class="daily-section-title">推奨アクション</div>
+                <div class="daily-action-box">
+                  ${actionsHtml}
+                </div>
+                
+                <details class="daily-details">
+                  <summary>詳細分析を読む（見解の弱点や波及影響など）</summary>
+                  <div class="daily-details-content">
+                    <h5>なぜこの論点が重要か</h5>
+                    <p>${escapeHtml(t.issue_reason)}</p>
+                    <h5>現在の解釈の弱点</h5>
+                    <p>${escapeHtml(t.critical_review?.weakness_of_current_interpretation || "-")}</p>
+                    <h5>別解釈の可能性</h5>
+                    <p>${escapeHtml(t.critical_review?.alternative_interpretation || "-")}</p>
+                    <h5>次に追加確認が必要な点</h5>
+                    <p>${escapeHtml(t.critical_review?.what_to_verify_next || "-")}</p>
+                    <h5>自社への波及影響（システム影響）</h5>
+                    <ul>${sysImpactHtml}</ul>
+                  </div>
+                </details>
+              </div>
+            `;
+          });
+          dailyContent.innerHTML = html;
         }
       }
     } catch(e) {

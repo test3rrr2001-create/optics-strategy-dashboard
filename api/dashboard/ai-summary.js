@@ -42,19 +42,61 @@ export default async function handler(req, res) {
 
     const prompt = `
 あなたは光学機器業界（顕微鏡、工業用内視鏡、管内カメラ、美容機器）の戦略分析エキスパートです。
-以下の最新ニュースリストを元に、${currentProject}分野における「今月の重要シグナル」と「推奨アクション」を日本語で作成してください。
+以下の最新ニュースリストを元に、${currentProject}カテゴリの商品企画・MD向けに「戦略分析（思考レイヤー）」を生成してください。
+AIとして単に要約や断定をするのではなく、【考える順番】（論点特定→仮説構築→批判的検証→インバージョン→波及影響→推奨アクション）に従って思考を整理してください。
+
+【考える順番と必須項目】
+1) 論点思考：この情報の集合が答えるべき主要論点と、商品企画・MDにとってなぜ重要かを特定する。
+2) 仮説思考：有力仮説を最大3つ出し、それぞれの根拠と不足情報を示す。
+3) 批判的思考：現在の解釈の弱点と別解釈、次に追加確認が必要な点を示す。
+4) インバージョン：この変化を見誤ると自社に起こりうる失敗（見落としリスク）を示す。
+5) システム思考：自社の価格、販路、粗利、顧客期待などへの波及影響を示す。
+6) 推奨アクション：最終判断は人間が行う前提で、推奨アクションを最大3つ提案し、確からしさ（High/Medium/Low）を付与する。
+
+【出力形式】トーンは短く構造的とし、冗長な美文を避けてください。
+純粋なJSON形式で以下の構造で出力してください。Markdownのバックティックスなどは含めないでください。
+また、トピックは最大3つ抽出してください。
+
+{
+  "summary": "全体の状況を一言で要約（40文字以内）",
+  "actions": ["推奨アクション1（既存互換用）", "推奨アクション2（既存互換用）"],
+  "topics": [
+    {
+      "topic_type": "competitor_product / regulation / market_shift / technology_shift",
+      "importance": "High / Medium / Low",
+      "topic_title": "重要トピックの見出し（20文字以内）",
+      "main_issue": "この情報が答えるべき主要論点",
+      "issue_reason": "なぜその論点が商品企画・MDにとって重要か",
+      "hypotheses": [
+        {
+          "title": "仮説タイトル",
+          "description": "内容",
+          "confidence_level": "High / Medium / Low",
+          "supporting_evidence": "根拠",
+          "missing_information": "不足情報"
+        }
+      ],
+      "critical_review": {
+        "weakness_of_current_interpretation": "現在の解釈の弱点",
+        "alternative_interpretation": "別解釈",
+        "what_to_verify_next": "追加で確認が必要な点"
+      },
+      "inversion_risk": "この変化を見落とした場合に起こりうる失敗",
+      "system_impact": ["波及影響1", "波及影響2"],
+      "recommended_actions": [
+        {
+          "action": "具体的な対応策",
+          "urgency": "High / Medium / Low",
+          "owner_suggestion": "商品企画 / MD / 営業 など",
+          "reason": "理由"
+        }
+      ]
+    }
+  ]
+}
 
 【最新ニュース】
 ${newsText}
-
-【出力形式】
-JSON形式で以下の構造で出力してください。
-{
-  "summary": "全体の状況を一言で要約（40文字以内）",
-  "signals": ["重要な予兆1", "重要な予兆2", ...],
-  "actions": ["推奨される具体的な打ち手1", "推奨される具体的な打ち手2", ...]
-}
-不要な解説やMarkdownのバックティックス（\`\`\`jsonなど）は含めず、純粋なJSON文字列のみを返してください。
 `;
 
     // 4. Gemini API (Google AI Studio) の呼び出し
