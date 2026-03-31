@@ -570,7 +570,10 @@
       padding: 2px 8px; border-radius: 8px;
       background: var(--accent-soft); color: var(--accent);
     }
-    .insight-card-text { font-size: 12px; color: var(--text-muted); line-height: 1.65; flex: 1; }
+    .insight-card-text { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; flex: 1; display:flex; flex-direction:column; gap:8px;}
+    .ic-conclusion { font-weight: 700; color: var(--text-main); }
+    .ic-plan { font-size: 12.5px; background: var(--hover-bg); padding: 8px 10px; border-radius: 6px; border-left: 3px solid var(--accent); margin-top: 4px; }
+    .ic-plan-icon { margin-right: 4px; font-size: 13px; }
     .insight-card-cta {
       font-size: 11px; font-weight: 700; color: var(--accent);
       display: flex; align-items: center; gap: 4px; margin-top: 4px;
@@ -852,10 +855,10 @@
     beauty:               { label: "美容用",     emoji: "✨", desc: "美容・スキンケア機器向け光学部品市場を追跡します。" }
   };
   const STRATEGY_NOTES = {
-    microscope:           "AI診断支援・デジタル病理との融合が加速。エッジ解析によるリアルタイム処理とデータ連携の標準化が勝負所です。",
-    industrial_endoscope: "FA・ロボティクス統合による検査全自動化が進行。人間向けから「AI判定用」の画質・データ提供へのパラダイムシフトが起きています。",
-    pipe_camera:          "老朽インフラ点検の義務化が追い風。ハードの堅牢性だけでなく、現場での即時レポート自動生成によるDX化が必須要件です。",
-    beauty:               "美容クリニックのDX化と「診断の客観化」ニーズが急増。スマホカメラの進化を凌駕する特殊光・マルチスペクトル解析が独自の価値となります。"
+    microscope:           { conclusion: "AI診断支援・デジタル病理へのシフト", plan: "ソフト連携とエッジ解析の標準化" },
+    industrial_endoscope: { conclusion: "検査全自動化（AI判定）への移行", plan: "ロボティクス統合とデータ仕様の再定義" },
+    pipe_camera:          { conclusion: "インフラ点検の義務化とDX化", plan: "即時レポート自動生成機能の実装" },
+    beauty:               { conclusion: "クリニックDXと診断の客観化", plan: "特殊光やマルチスペクトル解析による独自価値" }
   };
 
   // ===== タブ切り替え =====
@@ -948,10 +951,18 @@
       if (cntEl) {
         cntEl.textContent = (counts[key] || 0) + "件";
       }
-      // 戦略テキストをカードに
+      // 戦略テキストをカードに（構造化フォーマット表示）
       const textEl = document.getElementById("home-ai-grid-" + key);
-      if (textEl && STRATEGY_NOTES[key]) {
-        textEl.textContent = STRATEGY_NOTES[key];
+      const data = STRATEGY_NOTES[key];
+      if (textEl && data) {
+        if (typeof data === "object") {
+           textEl.innerHTML = `
+             <div class="ic-conclusion">${escapeHtml(data.conclusion)}</div>
+             <div class="ic-plan"><span class="ic-plan-icon">🔥</span>アクション: ${escapeHtml(data.plan)}</div>
+           `;
+        } else {
+           textEl.textContent = data; // 後方互換性
+        }
       }
     });
   }
