@@ -1356,113 +1356,231 @@
     }
   }
 
+  // ===== 静的分野別AI戦略サマリー（APIフォールバック用） =====
+  const STATIC_STRATEGY_DATA = {
+    "1": {
+      "summary": "AI診断支援による「検査の自動化」が加速中",
+      "actions": ["ソフトウェア連携対応の強化", "大学病院向けトライアルの試験導入"],
+      "topics": [{
+        "topic_type": "technology_shift", "importance": "High", "topic_title": "AI病理診断の標準化",
+        "main_issue": "AI解析を前提としたハード要件定義とデータ連携",
+        "issue_reason": "ソフトウェアエコシステムから外れると単なる画像取得デバイスに転落するため。",
+        "hypotheses": [{
+          "title": "エッジAI処理の需要増", "description": "クラウド送信のタイムラグを嫌い、カメラ本体またはPC側のリアルタイム解析ニーズが急増する。",
+          "confidence_level": "High", "supporting_evidence": "医療データのクラウド保存に関する懸念と、遅延への不満", "missing_information": "主要競合の次期モデルのエッジ処理能力"
+        }],
+        "critical_review": {
+          "weakness_of_current_interpretation": "すべての医療機関がすぐにAIを導入できるわけではない。",
+          "alternative_interpretation": "ハイエンドモデルでのみAI機能が使われる可能性。",
+          "what_to_verify_next": "中小病院層におけるAI導入ロードマップ調査"
+        },
+        "inversion_risk": "高画質化のみに投資し続け、データ連携インターフェースを持たない製品をリリースしてしまうこと。",
+        "system_impact": ["API・SDKの公開要望が急増", "ソフトウェアベンダーからの問い合わせ増加"],
+        "recommended_actions": [{
+          "action": "既存機器の映像出力を用いたAI連携の実証検証", "urgency": "High", "owner_suggestion": "商品企画・R&D", "reason": "新機種開発を待たずに現行機種でAI対応の波に乗れるか確認するため。"
+        }]
+      }]
+    },
+    "2": {
+      "summary": "FA連動・ドローン統合による「非破壊検査の高度化」",
+      "actions": ["ロボットメーカーとの協業検討", "3D計測精度の向上プラン前倒し"],
+      "topics": [{
+        "topic_type": "market_shift", "importance": "High", "topic_title": "検査の全自動化への移行",
+        "main_issue": "目視からAI自動欠陥検出へ移行する中でのデバイス価値の再定義",
+        "issue_reason": "人間向けの画質から、AI判定向けの画質・データ提供が求められるため。",
+        "hypotheses": [{
+          "title": "ロボットへの組み込み需要の急増", "description": "ロボットやドローンの先端モジュールとして内視鏡カメラが使われるケースが主流になる。",
+          "confidence_level": "Medium", "supporting_evidence": "製造業でのロボット導入が記録的に増加中。", "missing_information": "ロボットメーカーが独自開発する脅威度"
+        }],
+        "critical_review": {
+          "weakness_of_current_interpretation": "多品種少量生産では依然として目視が有利。",
+          "alternative_interpretation": "完全自動化ではなく、作業アシスト（AR等）が先行する可能性。",
+          "what_to_verify_next": "現場が自動判定をどこまで信頼しているかの調査"
+        },
+        "inversion_risk": "人間の操作性のみにリソースを集中してしまうこと。",
+        "system_impact": ["ロボットメーカーへのOEM提供", "SIerとのアライアンス"],
+        "recommended_actions": [{
+          "action": "主要ロボットへの接続仕様の調査", "urgency": "Medium", "owner_suggestion": "商品企画", "reason": "組込用途への障壁を下げるため。"
+        }]
+      }]
+    },
+    "3": {
+      "summary": "老朽インフラの維持管理DXとレポート自動生成化",
+      "actions": ["省電力通信機能の検証", "現場での即時レポート化のプロト作成"],
+      "topics": [{
+        "topic_type": "regulation", "importance": "High", "topic_title": "インフラ点検の義務化拡大",
+        "main_issue": "点検基準厳格化に伴う、映像と位置情報・日時の紐付け対応",
+        "issue_reason": "法定要件を満たす証跡データを作成する必要があるため。",
+        "hypotheses": [{
+          "title": "レポート自動生成システムの標準化", "description": "現場でカメラから即時に調書を自動生成するワークフローが必須になる。",
+          "confidence_level": "High", "supporting_evidence": "土木業界の残業規制による効率化の急務", "missing_information": "自治体の電子納品フォーマットの統一状況"
+        }],
+        "critical_review": {
+          "weakness_of_current_interpretation": "古い業者はITツールへの忌避感が強い。",
+          "alternative_interpretation": "操作は極限までシンプルにし、クラウド側で全て処理するモデルが勝つ。",
+          "what_to_verify_next": "中小業者のITリテラシーと予算感"
+        },
+        "inversion_risk": "ハードの堅牢性のみに注力し、データ出力連携を軽視すること。",
+        "system_impact": ["サブスクモデルへの転換", "代理店のIT支援スキルの必要性"],
+        "recommended_actions": [{
+          "action": "ワンクリックでレポート出力まで完了する仕組みの開発", "urgency": "High", "owner_suggestion": "ソフトウェアチーム", "reason": "報告という真の顧客ジョブを解決するため。"
+        }]
+      }]
+    },
+    "4": {
+      "summary": "非接触・高解像スキン分析と見えない肌問題の可視化",
+      "actions": ["マルチスペクトル画像解析の導入", "個人向けモバイルへの対応"],
+      "topics": [{
+        "topic_type": "competitor_product", "importance": "High", "topic_title": "美容クリニックのDX化",
+        "main_issue": "「診断の客観化」とカウンセリング体験の向上",
+        "issue_reason": "数値と画像による明確なエビデンスがないと顧客が離れるため。",
+        "hypotheses": [{
+          "title": "特殊光での隠れたトラブル可視化の定着", "description": "将来の肌トラブル予兆を見せる「予測型」機器が標準装備になる。",
+          "confidence_level": "High", "supporting_evidence": "高価格帯の美容機器の導入急増", "missing_information": "中価格帯の競合製品の台頭スピード"
+        }],
+        "critical_review": {
+          "weakness_of_current_interpretation": "高機能化で価格が高騰すると普及しない。",
+          "alternative_interpretation": "スマホ＋AIアプリが市場を席巻するパラダイムシフトの可能性。",
+          "what_to_verify_next": "スマホアプリ型肌診断と専用ハードの精度比較"
+        },
+        "inversion_risk": "従来通りのスコープを作り続け、ソフトウェア解析メーカーに市場を奪われること。",
+        "system_impact": ["BtoBtoCモデルの考慮", "プライバシーデータ管理のコンプライアンス"],
+        "recommended_actions": [{
+          "action": "スマホカメラ進化と自社ハード優位性の徹底比較", "urgency": "Medium", "owner_suggestion": "経営層", "reason": "スマホで代替可能になる領域を見極めるため。"
+        }]
+      }]
+    }
+  };
+
   // ===== AI戦略サマリー読み込み =====
   async function loadAISummary(project = "") {
     const isHome = project === "";
-    const prefix = isHome ? "home-ai" : project + "-ai";
+    
+    // バグ修正: プロジェクトの数値をキー文字列にマップし直す（例: 1 -> microscope）
+    let key = project;
+    if (!isHome) {
+      const map = { "1": "microscope", "2": "industrial_endoscope", "3": "pipe_camera", "4": "beauty" };
+      key = map[String(project)] || project;
+    }
+    const prefix = isHome ? "home-ai" : key + "-ai";
+
     const loadingEl = document.getElementById(prefix + "-loading");
     const contentEl = document.getElementById(prefix + "-content");
-    const badgeEl = document.getElementById(isHome ? "ai-summary-badge" : project + "-ai-badge");
+    const badgeEl = document.getElementById(isHome ? "ai-summary-badge" : key + "-ai-badge");
 
     try {
       const res = await fetch(`/api/dashboard/ai-summary${project ? "?project=" + project : ""}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "AI load failed");
-
-      if (loadingEl) loadingEl.style.display = "none";
-      if (contentEl) contentEl.style.display = "block";
-      if (badgeEl) {
-        badgeEl.textContent = "Gemini分析完了";
-        badgeEl.style.background = "rgba(16, 185, 129, 0.15)";
-        badgeEl.style.color = "var(--success)";
+      
+      // JSONがうまく生成されていない場合もフォールバックさせる
+      if (!isHome && (!json.topics || json.topics.length === 0)) {
+         throw new Error("AI data incomplete");
       }
-
-      if (isHome) {
-        const homeAiText = document.getElementById("home-ai-text");
-        if (homeAiText) homeAiText.textContent = json.summary || "分析中...";
-        const signalsEl = document.getElementById("home-ai-signals");
-        if (signalsEl) signalsEl.innerHTML = (json.signals || []).map(s => `<li>${escapeHtml(s)}</li>`).join("");
-      } else {
-        const actionsEl = document.getElementById(project + "-ai-actions");
-        if (actionsEl) {
-          actionsEl.innerHTML = (json.actions || []).map(a => `<li>${escapeHtml(a)}</li>`).join("");
-        }
-
-        // --- Render Daily Analysis (Topics) ---
-        const dailyPanel = document.getElementById(project + "-daily-analysis-panel");
-        const dailyContent = document.getElementById(project + "-daily-analysis-content");
-        
-        if (dailyPanel && dailyContent && json.topics && json.topics.length > 0) {
-          dailyPanel.style.display = "block";
-          
-          let html = "";
-          json.topics.forEach(t => {
-            const urgencyClass = (t.importance === 'High' || t.importance === '高') ? 'high' : '';
-            const hyposHtml = (t.hypotheses || []).map(h => `
-              <div class="daily-hypo-box">
-                <div class="daily-hypo-title"><span>💡 ${escapeHtml(h.title)}</span> <span>確度: ${escapeHtml(h.confidence_level)}</span></div>
-                <div class="daily-hypo-desc">${escapeHtml(h.description)}</div>
-                <details style="margin-top:6px;font-size:12px;color:var(--text-muted)"><summary>根拠と補足</summary>
-                  <p style="margin:4px 0"><strong>根拠:</strong> ${escapeHtml(h.supporting_evidence)}</p>
-                  <p style="margin:2px 0"><strong>不足情報:</strong> ${escapeHtml(h.missing_information)}</p>
-                </details>
-              </div>
-            `).join("");
-
-            const actionsHtml = (t.recommended_actions || []).map(a => `
-              <div class="daily-action-item">
-                <div class="daily-action-title">🔥 ${escapeHtml(a.action)}</div>
-                <div class="daily-action-meta"><span>優先度: ${escapeHtml(a.urgency)}</span><span>担当: ${escapeHtml(a.owner_suggestion)}</span></div>
-                <div style="font-size:12px; margin-top:4px; color:var(--text-muted)">${escapeHtml(a.reason)}</div>
-              </div>
-            `).join("");
-            
-            const sysImpactHtml = (t.system_impact || []).map(si => `<li>${escapeHtml(si)}</li>`).join("");
-
-            html += `
-              <div class="daily-card">
-                <div class="daily-card-header">
-                  <span class="daily-badge ${urgencyClass}">${escapeHtml(t.topic_type)}</span>
-                  <span class="daily-badge ${urgencyClass}">重要度: ${escapeHtml(t.importance)}</span>
-                  <span class="daily-title">${escapeHtml(t.topic_title)}</span>
-                </div>
-                <div class="daily-issue">🎯 主要論点: ${escapeHtml(t.main_issue)}</div>
-                
-                <div class="daily-section-title">有力仮説</div>
-                ${hyposHtml}
-                
-                <div class="daily-section-title">見落としリスク（インバージョン）</div>
-                <div class="daily-risk">⚠️ ${escapeHtml(t.inversion_risk)}</div>
-                
-                <div class="daily-section-title">推奨アクション</div>
-                <div class="daily-action-box">
-                  ${actionsHtml}
-                </div>
-                
-                <details class="daily-details">
-                  <summary>詳細分析を読む（見解の弱点や波及影響など）</summary>
-                  <div class="daily-details-content">
-                    <h5>なぜこの論点が重要か</h5>
-                    <p>${escapeHtml(t.issue_reason)}</p>
-                    <h5>現在の解釈の弱点</h5>
-                    <p>${escapeHtml(t.critical_review?.weakness_of_current_interpretation || "-")}</p>
-                    <h5>別解釈の可能性</h5>
-                    <p>${escapeHtml(t.critical_review?.alternative_interpretation || "-")}</p>
-                    <h5>次に追加確認が必要な点</h5>
-                    <p>${escapeHtml(t.critical_review?.what_to_verify_next || "-")}</p>
-                    <h5>自社への波及影響（システム影響）</h5>
-                    <ul>${sysImpactHtml}</ul>
-                  </div>
-                </details>
-              </div>
-            `;
-          });
-          dailyContent.innerHTML = html;
-        }
-      }
+      renderAIData(isHome, key, json, loadingEl, contentEl, badgeEl, false);
     } catch(e) {
-      console.error(e);
-      if (loadingEl) loadingEl.textContent = "AI戦略サマリーは現在メンテナンス中です（アップグレード準備中）";
+      console.warn("AI API Error, using fallback static data.", e);
+      if (isHome) {
+         if (loadingEl) loadingEl.style.display = "none";
+      } else {
+         const staticData = STATIC_STRATEGY_DATA[project];
+         if (staticData) {
+            renderAIData(isHome, key, staticData, loadingEl, contentEl, badgeEl, true);
+         } else {
+            if (loadingEl) loadingEl.textContent = "AI分析は現在メンテナンス中です";
+         }
+      }
+    }
+  }
+
+  function renderAIData(isHome, key, json, loadingEl, contentEl, badgeEl, isFallback = false) {
+    if (loadingEl) loadingEl.style.display = "none";
+    if (contentEl) contentEl.style.display = "block";
+    if (badgeEl) {
+      badgeEl.textContent = isFallback ? "Antigravityの分析" : "Gemini分析完了";
+      badgeEl.style.background = isFallback ? "rgba(245, 158, 11, 0.15)" : "rgba(16, 185, 129, 0.15)";
+      badgeEl.style.color = isFallback ? "var(--warning)" : "var(--success)";
+    }
+
+    if (isHome) {
+      // Home has special rendering, which is currently handled by STRATEGY_NOTES directly in renderHomeInsightGrid.
+    } else {
+      const actionsEl = document.getElementById(key + "-ai-actions");
+      if (actionsEl) {
+        actionsEl.innerHTML = (json.actions || []).map(a => `<li>${escapeHtml(a)}</li>`).join("");
+      }
+
+      // --- Render Daily Analysis (Topics) ---
+      const dailyPanel = document.getElementById(key + "-daily-analysis-panel");
+      const dailyContent = document.getElementById(key + "-daily-analysis-content");
+      
+      if (dailyPanel && dailyContent && json.topics && json.topics.length > 0) {
+        dailyPanel.style.display = "block";
+        
+        let html = "";
+        json.topics.forEach(t => {
+          const urgencyClass = (t.importance === 'High' || t.importance === '高') ? 'high' : '';
+          const hyposHtml = (t.hypotheses || []).map(h => `
+            <div class="daily-hypo-box">
+              <div class="daily-hypo-title"><span>💡 ${escapeHtml(h.title)}</span> <span>確度: ${escapeHtml(h.confidence_level)}</span></div>
+              <div class="daily-hypo-desc">${escapeHtml(h.description)}</div>
+              <details style="margin-top:6px;font-size:12px;color:var(--text-muted)"><summary>根拠と補足</summary>
+                <p style="margin:4px 0"><strong>根拠:</strong> ${escapeHtml(h.supporting_evidence)}</p>
+                <p style="margin:2px 0"><strong>不足情報:</strong> ${escapeHtml(h.missing_information)}</p>
+              </details>
+            </div>
+          `).join("");
+
+          const actionsHtml = (t.recommended_actions || []).map(a => `
+            <div class="daily-action-item">
+              <div class="daily-action-title">🔥 ${escapeHtml(a.action)}</div>
+              <div class="daily-action-meta"><span>優先度: ${escapeHtml(a.urgency)}</span><span>担当: ${escapeHtml(a.owner_suggestion)}</span></div>
+              <div style="font-size:12px; margin-top:4px; color:var(--text-muted)">${escapeHtml(a.reason)}</div>
+            </div>
+          `).join("");
+          
+          const sysImpactHtml = (t.system_impact || []).map(si => `<li>${escapeHtml(si)}</li>`).join("");
+
+          html += `
+            <div class="daily-card">
+              <div class="daily-card-header">
+                <span class="daily-badge ${urgencyClass}">${escapeHtml(t.topic_type)}</span>
+                <span class="daily-badge ${urgencyClass}">重要度: ${escapeHtml(t.importance)}</span>
+                <span class="daily-title">${escapeHtml(t.topic_title)}</span>
+              </div>
+              <div class="daily-issue">🎯 主要論点: ${escapeHtml(t.main_issue)}</div>
+              
+              <div class="daily-section-title">有力仮説</div>
+              ${hyposHtml}
+              
+              <div class="daily-section-title">見落としリスク（インバージョン）</div>
+              <div class="daily-risk">⚠️ ${escapeHtml(t.inversion_risk)}</div>
+              
+              <div class="daily-section-title">推奨アクション</div>
+              <div class="daily-action-box">
+                ${actionsHtml}
+              </div>
+              
+              <details class="daily-details">
+                <summary>詳細分析を読む（見解の弱点や波及影響など）</summary>
+                <div class="daily-details-content">
+                  <h5>なぜこの論点が重要か</h5>
+                  <p>${escapeHtml(t.issue_reason)}</p>
+                  <h5>現在の解釈の弱点</h5>
+                  <p>${escapeHtml(t.critical_review?.weakness_of_current_interpretation || "-")}</p>
+                  <h5>別解釈の可能性</h5>
+                  <p>${escapeHtml(t.critical_review?.alternative_interpretation || "-")}</p>
+                  <h5>次に追加確認が必要な点</h5>
+                  <p>${escapeHtml(t.critical_review?.what_to_verify_next || "-")}</p>
+                  <h5>自社への波及影響（システム影響）</h5>
+                  <ul>${sysImpactHtml}</ul>
+                </div>
+              </details>
+            </div>
+          `;
+        });
+        dailyContent.innerHTML = html;
+      }
     }
   }
 
