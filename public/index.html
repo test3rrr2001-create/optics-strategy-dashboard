@@ -530,7 +530,7 @@
     /* ===== 4分野AIインサイトグリッド (Home) ===== */
     .insight-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: 1fr;
       gap: 16px;
       margin-bottom: 0;
     }
@@ -538,45 +538,46 @@
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 16px;
-      padding: 20px;
+      padding: 24px;
       cursor: pointer;
       backdrop-filter: blur(12px);
       transition: all 0.25s ease;
-      display: flex; flex-direction: column; gap: 10px;
+      display: flex; flex-direction: column; gap: 12px;
       position: relative; overflow: hidden;
     }
     .insight-card::before {
       content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      border-radius: 16px 16px 0 0;
+      position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
+      border-radius: 16px 0 0 16px;
     }
     .insight-card.ic-microscope::before  { background: #3b82f6; }
     .insight-card.ic-industrial::before  { background: #f97316; }
     .insight-card.ic-pipe::before        { background: #10b981; }
     .insight-card.ic-beauty::before      { background: #d946ef; }
     .insight-card:hover {
-      transform: translateY(-4px) scale(1.02);
+      transform: translateX(4px);
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
       border-color: rgba(59, 130, 246, 0.5);
     }
     @media (prefers-color-scheme: dark) {
       .insight-card:hover { box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3); }
     }
-    .insight-card-header { display: flex; align-items: center; gap: 8px; }
-    .insight-card-emoji { font-size: 20px; }
-    .insight-card-label { font-size: 13px; font-weight: 800; color: var(--text-main); }
+    .insight-card-header { display: flex; align-items: center; gap: 12px; }
+    .insight-card-emoji { font-size: 24px; }
+    .insight-card-label { font-size: 16px; font-weight: 800; color: var(--text-main); }
     .insight-card-badge {
-      margin-left: auto; font-size: 10px; font-weight: 700;
-      padding: 2px 8px; border-radius: 8px;
+      margin-left: auto; font-size: 12px; font-weight: 700;
+      padding: 4px 10px; border-radius: 8px;
       background: var(--accent-soft); color: var(--accent);
     }
-    .insight-card-text { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; flex: 1; display:flex; flex-direction:column; gap:8px;}
-    .ic-conclusion { font-weight: 700; color: var(--text-main); }
-    .ic-plan { font-size: 12.5px; background: var(--hover-bg); padding: 8px 10px; border-radius: 6px; border-left: 3px solid var(--accent); margin-top: 4px; }
-    .ic-plan-icon { margin-right: 4px; font-size: 13px; }
+    .insight-card-text { font-size: 15px; color: var(--text-muted); line-height: 1.6; flex: 1; display:flex; flex-direction:column; gap:10px; padding-left: 36px;}
+    .ic-conclusion { font-weight: 800; color: var(--text-main); font-size: 16px; }
+    .ic-plan { font-size: 14.5px; background: var(--hover-bg); padding: 12px 16px; border-radius: 8px; border-left: 4px solid var(--accent); margin-top: 4px; }
+    .ic-plan-icon { margin-right: 6px; font-size: 15px; }
     .insight-card-cta {
-      font-size: 11px; font-weight: 700; color: var(--accent);
-      display: flex; align-items: center; gap: 4px; margin-top: 4px;
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      display: flex; align-items: center; gap: 4px; margin-top: 8px;
+      padding-left: 36px;
     }
     /* Collapsible data section divider */
     .data-section-header {
